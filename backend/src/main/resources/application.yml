@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: preppal-backend
+
+  datasource:
+    # Postgres connection (Neon). Set via env in backend/.env or the shell.
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/preppal}
+    username: ${DATABASE_USER:preppal}
+    password: ${DATABASE_PASSWORD:preppal}
+
+  jpa:
+    hibernate:
+      ddl-auto: none          # Flyway fully owns the schema
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+server:
+  port: ${PORT:8080}
+
+# App-specific config
+preppal:
+  jwt:
+    # 256-bit secret (override in prod!). Base64 or plain long string.
+    secret: ${JWT_SECRET:change-me-in-prod-this-is-a-long-dev-only-secret-key-0123456789}
+    # token validity in milliseconds (7 days)
+    expiration-ms: ${JWT_EXPIRATION_MS:604800000}
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+    model: ${GEMINI_MODEL:gemini-2.0-flash}
+    base-url: https://generativelanguage.googleapis.com/v1beta
+
+logging:
+  level:
+    org.springframework.security: INFO
