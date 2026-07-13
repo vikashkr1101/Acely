@@ -48,4 +48,9 @@ public class InterviewController {
     public InterviewDto complete(@AuthenticationPrincipal User user, @PathVariable UUID id) {
         return interviews.complete(user, id);
     }
+
+    @GetMapping("/{id}/report")
+    public ReportDto report(@AuthenticationPrincipal User user, @PathVariable UUID id) {
+        return interviews.report(user, id);
+    }
 }

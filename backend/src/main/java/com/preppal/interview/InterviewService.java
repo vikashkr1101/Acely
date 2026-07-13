@@ -130,6 +130,29 @@ public class InterviewService {
         return new UsageDto(user.getPlan(), used, pro ? -1 : freeMonthlyMocks, remaining);
     }
 
+    // ── Rich report: overall + sub-scores + nerves + per-question ───────────
+    @Transactional(readOnly = true)
+    public ReportDto report(User user, UUID sessionId) {
+        InterviewSession s = ownedSession(user, sessionId);
+        List<SessionMetric> ms = metrics.findBySessionId(sessionId);
+        return new ReportDto(s.getId(), s.getRole(), s.getMode(), s.getOverallScore(), s.getSummary(),
+                metricAvg(ms, "communication"), metricAvg(ms, "technical_depth"),
+                metricAvg(ms, "clarity"), metricAvg(ms, "relevance"),
+                nerve(ms, MetricPhase.BEFORE), nerve(ms, MetricPhase.AFTER),
+                s.getQuestions().stream().map(QuestionDto::from).toList());
+    }
+
+    private int metricAvg(List<SessionMetric> ms, String key) {
+        var a = ms.stream().filter(m -> m.getMetricKey().equals(key)).mapToInt(m -> m.getValue().intValue()).average();
+        return a.isPresent() ? (int) Math.round(a.getAsDouble()) : 0;
+    }
+
+    private Integer nerve(List<SessionMetric> ms, MetricPhase phase) {
+        return ms.stream()
+                .filter(m -> m.getMetricKey().equals("nervousness") && m.getPhase() == phase)
+                .map(m -> m.getValue().intValue()).findFirst().orElse(null);
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────────
     private void enforceQuota(User user) {
         if ("PRO".equalsIgnoreCase(user.getPlan())) return;

@@ -60,6 +60,20 @@ export interface Usage {
   limit: number;
   remaining: number;
 }
+export interface Report {
+  id: string;
+  role: string;
+  mode: string;
+  overallScore: number | null;
+  summary: string | null;
+  communication: number;
+  technical: number;
+  clarity: number;
+  relevance: number;
+  nervesBefore: number | null;
+  nervesAfter: number | null;
+  questions: QuestionDto[];
+}
 export interface Dashboard {
   readiness: number;
   mocksDone: number;
@@ -129,6 +143,8 @@ export const api = {
     }),
 
   getInterview: (id: string) => request<InterviewDto>(`/api/interviews/${id}`),
+
+  report: (id: string) => request<Report>(`/api/interviews/${id}/report`),
 
   listInterviews: () => request<InterviewDto[]>("/api/interviews"),
 

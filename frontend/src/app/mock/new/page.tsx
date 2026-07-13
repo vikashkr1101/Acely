@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { api, getToken } from "@/lib/api";
+import { api } from "@/lib/api";
+import { AppShell } from "@/components/layout/AppShell";
+import { MockGenLoader } from "@/components/mock/MockGenLoader";
 
 export default function NewMockPage() {
   const router = useRouter();
@@ -12,67 +13,66 @@ export default function NewMockPage() {
   const [count, setCount] = useState(4);
   const [mode, setMode] = useState<"TEXT" | "VOICE">("TEXT");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!getToken()) router.replace("/login");
-  }, [router]);
+  const [creating, setCreating] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
-    setLoading(true);
+    setCreating(true);
     try {
       const mock = await api.createInterview(role, jd, count, mode);
       router.push(`/mock/${mock.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not start the mock");
-      setLoading(false);
+      setCreating(false);
     }
   }
 
+  if (creating) return <MockGenLoader />;
+
   return (
-    <main className="wrap mock-wrap">
-      <Link href="/dashboard" className="back-link">← Dashboard</Link>
-      <h1 className="mock-h1">Set up your mock interview 🎤</h1>
-      <p className="mock-lead">Tell us the role — we&apos;ll tailor the questions. Take a breath, this is just practice.</p>
+    <AppShell>
+      <div className="setup-wrap">
+        <h1 className="mock-h1">Set up your mock interview 🎤</h1>
+        <p className="mock-lead">Tell us the role — we&apos;ll tailor the questions. Take a breath, this is just practice.</p>
 
-      <form className="setup-card" onSubmit={onSubmit}>
-        <label className="field">
-          <span>Target role</span>
-          <input value={role} onChange={(e) => setRole(e.target.value)} placeholder="e.g. Frontend Developer" required />
-        </label>
-        <label className="field">
-          <span>Job description <em>(optional — makes questions sharper)</em></span>
-          <textarea rows={4} value={jd} onChange={(e) => setJd(e.target.value)} placeholder="Paste the JD here…" />
-        </label>
-        <label className="field">
-          <span>Number of questions</span>
-          <select value={count} onChange={(e) => setCount(Number(e.target.value))}>
-            {[3, 4, 5, 6].map((n) => (
-              <option key={n} value={n}>{n} questions</option>
-            ))}
-          </select>
-        </label>
+        <form className="setup-card" onSubmit={onSubmit}>
+          <label className="field">
+            <span>Target role</span>
+            <input value={role} onChange={(e) => setRole(e.target.value)} placeholder="e.g. Frontend Developer" required />
+          </label>
+          <label className="field">
+            <span>Job description <em>(optional — makes questions sharper)</em></span>
+            <textarea rows={4} value={jd} onChange={(e) => setJd(e.target.value)} placeholder="Paste the JD here…" />
+          </label>
+          <label className="field">
+            <span>Number of questions</span>
+            <select value={count} onChange={(e) => setCount(Number(e.target.value))}>
+              {[3, 4, 5, 6].map((n) => (
+                <option key={n} value={n}>{n} questions</option>
+              ))}
+            </select>
+          </label>
 
-        <div className="field">
-          <span>How do you want to practise?</span>
-          <div className="mode-toggle">
-            <button type="button" className={`mode-opt${mode === "TEXT" ? " active" : ""}`} onClick={() => setMode("TEXT")}>
-              ⌨️ Text<em>Type your answers</em>
-            </button>
-            <button type="button" className={`mode-opt${mode === "VOICE" ? " active" : ""}`} onClick={() => setMode("VOICE")}>
-              🎤 Voice<em>Speak, like a real interview</em>
-            </button>
+          <div className="field">
+            <span>How do you want to practise?</span>
+            <div className="mode-toggle">
+              <button type="button" className={`mode-opt${mode === "TEXT" ? " active" : ""}`} onClick={() => setMode("TEXT")}>
+                ⌨️ Text<em>Type your answers</em>
+              </button>
+              <button type="button" className={`mode-opt${mode === "VOICE" ? " active" : ""}`} onClick={() => setMode("VOICE")}>
+                🎤 Voice<em>Speak, like a real interview</em>
+              </button>
+            </div>
           </div>
-        </div>
 
-        {error && <p className="auth-error">{error}</p>}
+          {error && <p className="auth-error">{error}</p>}
 
-        <button className="btn" type="submit" disabled={loading || !role.trim()} style={{ width: "100%", justifyContent: "center" }}>
-          {loading ? "Preparing your questions…" : "Start interview →"}
-        </button>
-      </form>
-    </main>
+          <button className="btn" type="submit" disabled={!role.trim()} style={{ width: "100%", justifyContent: "center" }}>
+            Start interview →
+          </button>
+        </form>
+      </div>
+    </AppShell>
   );
 }
