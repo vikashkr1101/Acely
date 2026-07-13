@@ -4,25 +4,51 @@
    PrepPal design system — Bold & Playful
 --------------------------------------------------------------------------- */
 :root {
-  --bg: #f6f7fb;
-  --bg2: #f0f1fb;
-  --ink: #1a1c2e;
-  --muted: #696f8c;
-  --faint: #a2a6bd;
-  --line: #e7e9f3;
-  --card: #ffffff;
+  /* ============================================================
+     ACTIVE PALETTE — MAGENTA / BOLD
+     To switch to Indigo/Violet: comment this block, then
+     uncomment the "INDIGO" block just below it.
+     ============================================================ */
+  --brand: #c026d3;
+  --brand2: #f43f5e;
+  --brandink: #86198f;
+  --soft: #fbe8ff;
+  --soft2: #ffe4e9;
+  --grad: linear-gradient(135deg, #c026d3, #f43f5e 92%);
+  --csh: 0 18px 34px -16px rgba(192, 38, 211, 0.4);
+  /* immersive interview accents */
+  --iv-glow1: rgba(192, 38, 211, 0.3);
+  --iv-glow2: rgba(244, 63, 94, 0.2);
+  --iv-orb: radial-gradient(circle at 35% 30%, #ff9de0, #c026d3 46%, #7d1a9c 100%);
+  --iv-accent: #e79af0;
 
+  /* ============================================================
+     ALT PALETTE — INDIGO / VIOLET  (uncomment to switch)
+     ============================================================
   --brand: #6d5efc;
   --brand2: #9d7bff;
   --brandink: #5646d6;
   --soft: #eeecfe;
   --soft2: #eef2ff;
+  --grad: linear-gradient(135deg, #6d5efc, #9d7bff 92%);
+  --csh: 0 18px 34px -16px rgba(109, 94, 252, 0.4);
+  --iv-glow1: rgba(109, 94, 252, 0.3);
+  --iv-glow2: rgba(157, 123, 255, 0.2);
+  --iv-orb: radial-gradient(circle at 35% 30%, #c3b9ff, #6d5efc 45%, #4436b8 100%);
+  --iv-accent: #b9a9ff;
+  */
+
+  /* neutrals + shared (palette-independent) */
+  --bg: #f6f7fb;
+  --bg2: #f3f4fb;
+  --ink: #1a1c2e;
+  --muted: #696f8c;
+  --faint: #a2a6bd;
+  --line: #e7e9f3;
+  --card: #ffffff;
   --ok: #22c55e;
   --amber: #f59e0b;
-
-  --grad: linear-gradient(135deg, #6d5efc, #9d7bff 92%);
-  --grad-soft: linear-gradient(120deg, #eeecfe, #eef2ff);
-  --csh: 0 18px 34px -16px rgba(109, 94, 252, 0.4);
+  --grad-soft: linear-gradient(120deg, var(--soft), var(--soft2));
   --sh: 0 4px 14px -8px rgba(26, 28, 46, 0.14);
 
   --maxw: 1100px;
@@ -923,7 +949,7 @@ h4 {
   position: absolute;
   inset: 9px;
   border-radius: 50%;
-  background: #b31fbf;
+  background: var(--brand);
 }
 .ready-ring b {
   position: relative;
@@ -1182,8 +1208,13 @@ h4 {
 .app-main {
   flex: 1;
   min-width: 0;
-  padding: 30px 34px 60px;
-  max-width: 1040px;
+  padding: 30px 40px 70px;
+  display: flex;
+  justify-content: center;
+}
+.app-inner {
+  width: 100%;
+  max-width: 1000px;
 }
 @media (max-width: 760px) {
   .app-shell {
@@ -1255,13 +1286,15 @@ h4 {
 .mockgen {
   min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 18px; text-align: center; color: #f0eefb;
-  background: radial-gradient(640px 420px at 50% 34%, rgba(109,94,252,.24), transparent 60%),
+  background: radial-gradient(640px 420px at 50% 34%, var(--iv-glow1), transparent 60%),
     linear-gradient(160deg, #191830, #0f0e1c);
 }
+.mockgen-brand { position: absolute; top: 22px; left: 26px; display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 15px; color: #fff; }
+.mockgen-brand .mk { width: 26px; height: 26px; border-radius: 8px; background: var(--grad); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; }
 .mockgen-orb {
   width: 96px; height: 96px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #b8adff, #6d5efc 46%, #4436b8 100%);
-  box-shadow: 0 0 60px rgba(109,94,252,.6), inset 0 0 30px rgba(255,255,255,.25);
+  background: var(--iv-orb);
+  box-shadow: 0 0 60px var(--iv-glow1), inset 0 0 30px rgba(255,255,255,.25);
   animation: ibreathe 4s ease-in-out infinite;
 }
 .mockgen h3 { font-size: 21px; margin: 0; }
@@ -1275,10 +1308,11 @@ h4 {
 .iv {
   --ink: #f3f0ff; --muted: #b6b0e0; --faint: #8b85b5;
   --panel: rgba(255,255,255,.055); --panel-brd: rgba(255,255,255,.10);
-  --igrad: linear-gradient(135deg, #6d5efc, #9d7bff 92%);
-  min-height: 100vh; color: var(--ink);
-  background: radial-gradient(720px 440px at 22% 16%, rgba(109,94,252,.30), transparent 60%),
-    radial-gradient(680px 460px at 82% 90%, rgba(157,123,255,.20), transparent 60%),
+  --igrad: var(--grad);
+  height: 100vh; overflow: hidden; display: flex; flex-direction: column;
+  color: var(--ink);
+  background: radial-gradient(720px 440px at 22% 16%, var(--iv-glow1), transparent 60%),
+    radial-gradient(680px 460px at 82% 90%, var(--iv-glow2), transparent 60%),
     linear-gradient(160deg, #191830, #0f0e1c);
   position: relative;
 }
@@ -1288,9 +1322,11 @@ h4 {
     linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
   background-size: 46px 46px;
 }
+.iv-brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 15px; color: #fff; }
+.iv-brand .mk { width: 26px; height: 26px; border-radius: 8px; background: var(--grad); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; }
 .iv-top {
-  position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between;
-  padding: 20px 26px; max-width: 1100px; margin: 0 auto;
+  flex-shrink: 0; position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 26px; max-width: 1120px; margin: 0 auto; width: 100%;
 }
 .iv-exit { color: var(--muted); font-size: 13px; font-weight: 700; }
 .iv-exit:hover { color: #fff; }
@@ -1302,34 +1338,35 @@ h4 {
 .iv-dots i.cur { background: #fff; transform: scale(1.3); }
 
 .iv-grid {
-  position: relative; z-index: 2; max-width: 1000px; margin: 10px auto 0;
-  display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px; padding: 10px 26px 40px; align-items: stretch;
+  flex: 1; min-height: 0; position: relative; z-index: 2; max-width: 1120px; margin: 0 auto; width: 100%;
+  display: grid; grid-template-columns: 1fr 1.15fr; gap: 24px; padding: 4px 26px 26px; align-items: stretch;
 }
 /* coach panel */
 .iv-coach {
   display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
   background: var(--panel); border: 1px solid var(--panel-brd); border-radius: 22px; padding: 40px 28px; backdrop-filter: blur(10px);
+  overflow: hidden;
 }
 .iv-orb {
   width: 128px; height: 128px; border-radius: 50%; position: relative;
-  background: radial-gradient(circle at 35% 30%, #c3b9ff, #6d5efc 45%, #4436b8 100%);
-  box-shadow: 0 0 60px rgba(109,94,252,.55), inset 0 0 30px rgba(255,255,255,.25);
+  background: var(--iv-orb);
+  box-shadow: 0 0 60px var(--iv-glow1), inset 0 0 30px rgba(255,255,255,.25);
   animation: ibreathe 4s ease-in-out infinite;
 }
-.iv-orb::after { content: ""; position: absolute; inset: -14px; border-radius: 50%; border: 2px solid rgba(157,123,255,.35); animation: iring 4s ease-in-out infinite; }
-.iv-who { margin-top: 24px; font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase; color: #b9a9ff; font-weight: 800; }
+.iv-orb::after { content: ""; position: absolute; inset: -14px; border-radius: 50%; border: 2px solid var(--iv-glow2); animation: iring 4s ease-in-out infinite; }
+.iv-who { margin-top: 24px; font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--iv-accent); font-weight: 800; }
 .iv-state { margin-top: 8px; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 9px; }
 .iv-state .d { width: 8px; height: 8px; border-radius: 50%; background: #57e08a; box-shadow: 0 0 10px #57e08a; animation: iblink 1.3s infinite; }
 .iv-wave { display: flex; gap: 4px; align-items: center; height: 30px; margin-top: 22px; }
-.iv-wave i { width: 4px; border-radius: 3px; background: linear-gradient(#9d7bff, #6d5efc); animation: iwave 1s ease-in-out infinite; }
+.iv-wave i { width: 4px; border-radius: 3px; background: linear-gradient(var(--brand2), var(--brand)); animation: iwave 1s ease-in-out infinite; }
 .iv-wave i:nth-child(2){animation-delay:.1s}.iv-wave i:nth-child(3){animation-delay:.2s}.iv-wave i:nth-child(4){animation-delay:.3s}.iv-wave i:nth-child(5){animation-delay:.15s}.iv-wave i:nth-child(6){animation-delay:.25s}.iv-wave i:nth-child(7){animation-delay:.05s}.iv-wave i:nth-child(8){animation-delay:.35s}.iv-wave i:nth-child(9){animation-delay:.2s}
 
 /* answer panel */
-.iv-answer { display: flex; flex-direction: column; }
-.iv-qlabel { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #b9a9ff; margin-bottom: 12px; }
+.iv-answer { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; padding-right: 6px; }
+.iv-qlabel { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--iv-accent); margin-bottom: 12px; }
 .iv-q { font-size: 24px; font-weight: 800; line-height: 1.34; letter-spacing: -.01em; margin-bottom: 20px; color: #faf8ff; }
 .iv-replay { align-self: flex-start; font-size: 12.5px; font-weight: 700; color: var(--ink); background: rgba(255,255,255,.07); border: 1px solid var(--panel-brd); padding: 8px 14px; border-radius: 999px; margin-bottom: 18px; cursor: pointer; }
-.iv-transcript { flex: 1; background: var(--panel); border: 1px solid var(--panel-brd); border-radius: 16px; padding: 18px 20px; backdrop-filter: blur(10px); min-height: 130px; }
+.iv-transcript { background: var(--panel); border: 1px solid var(--panel-brd); border-radius: 16px; padding: 18px 20px; backdrop-filter: blur(10px); min-height: 120px; }
 .iv-tlabel { font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); margin-bottom: 10px; }
 .iv-transcript p { margin: 0; font-size: 15px; line-height: 1.6; color: #eee9ff; }
 .iv-caret { display: inline-block; width: 2px; height: 17px; background: var(--brand2); vertical-align: middle; margin-left: 2px; animation: iblink 1s steps(1) infinite; }
@@ -1337,7 +1374,7 @@ h4 {
 .iv-textarea::placeholder { color: var(--faint); }
 .iv-tip { display: flex; gap: 10px; align-items: flex-start; background: rgba(245,205,120,.10); border: 1px solid rgba(245,205,120,.25); border-radius: 13px; padding: 11px 14px; margin-top: 16px; font-size: 12.5px; color: #ffe0a3; }
 .iv-controls { display: flex; align-items: center; gap: 16px; margin-top: 22px; }
-.iv-mic { width: 64px; height: 64px; border-radius: 50%; background: var(--igrad); border: none; color: #fff; font-size: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 0 8px rgba(109,94,252,.16), 0 14px 30px -10px rgba(109,94,252,.6); position: relative; flex-shrink: 0; }
+.iv-mic { width: 64px; height: 64px; border-radius: 50%; background: var(--igrad); border: none; color: #fff; font-size: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 0 8px var(--iv-glow1), 0 14px 30px -10px var(--iv-glow1); position: relative; flex-shrink: 0; }
 .iv-mic.live { background: #ef4455; box-shadow: 0 0 0 8px rgba(239,68,85,.18); }
 .iv-mic.live::after { content: ""; position: absolute; inset: -8px; border-radius: 50%; border: 2px solid rgba(239,68,85,.4); animation: iring 1.6s ease-in-out infinite; }
 .iv-hint { color: var(--muted); font-size: 13px; font-weight: 600; }
@@ -1356,7 +1393,7 @@ h4 {
 
 /* calm entry (breathe + nerve) */
 .iv-ready { position: relative; z-index: 2; max-width: 640px; margin: 0 auto; text-align: center; padding: 20px 26px 60px; display: flex; flex-direction: column; align-items: center; }
-.iv-breathe { width: 120px; height: 120px; border-radius: 50%; background: var(--igrad); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 15px; box-shadow: 0 0 0 14px rgba(109,94,252,.12), 0 0 0 30px rgba(109,94,252,.06), 0 0 60px rgba(109,94,252,.5); animation: ibreathe 4s ease-in-out infinite; margin-bottom: 22px; }
+.iv-breathe { width: 120px; height: 120px; border-radius: 50%; background: var(--igrad); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 15px; box-shadow: 0 0 0 14px var(--iv-glow2), 0 0 0 30px var(--iv-glow2), 0 0 60px var(--iv-glow1); animation: ibreathe 4s ease-in-out infinite; margin-bottom: 22px; }
 .iv-ready h2 { font-size: 26px; font-weight: 900; margin: 0 0 10px; color: #faf8ff; }
 .iv-ready .say { color: var(--muted); font-size: 14.5px; max-width: 44ch; margin: 0 auto 22px; line-height: 1.6; }
 .iv-chips { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
@@ -1387,7 +1424,7 @@ h4 {
 .rp-nerve b { color: #1a8f4a; }
 .rp-hero { display: grid; grid-template-columns: 190px 1fr; gap: 16px; margin-bottom: 18px; }
 .rp-bigring { border: 1px solid var(--line); border-radius: 18px; padding: 20px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff; box-shadow: var(--sh); }
-.rp-ring { --v: 0; width: 108px; height: 108px; border-radius: 50%; background: conic-gradient(var(--brand) calc(var(--v) * 1%), var(--soft) 0); display: flex; align-items: center; justify-content: center; position: relative; }
+.rp-ring { --v: 0; --ring: var(--brand); width: 108px; height: 108px; border-radius: 50%; background: conic-gradient(var(--ring) calc(var(--v) * 1%), #eef0f6 0); display: flex; align-items: center; justify-content: center; position: relative; }
 .rp-ring::before { content: ""; position: absolute; inset: 11px; border-radius: 50%; background: #fff; }
 .rp-ring b { position: relative; font-size: 32px; font-weight: 900; }
 .rp-bigring .tag { margin-top: 12px; font-size: 12px; font-weight: 800; color: #1a8f4a; background: #e7f8ee; padding: 5px 13px; border-radius: 999px; }
@@ -1406,6 +1443,12 @@ h4 {
 .rp-q .qb { font-size: 11px; font-weight: 800; color: var(--brandink); background: var(--soft); padding: 3px 9px; border-radius: 999px; }
 .rp-q .qsc { font-weight: 800; color: var(--brand); }
 .rp-q .qfb { font-size: 13px; color: var(--muted); margin: 9px 0 0; }
+.rp-qs-title { font-size: 16px; font-weight: 800; margin: 22px 0 12px; }
+.rp-ans { background: var(--bg2); border-radius: 11px; padding: 11px 14px; font-size: 13px; color: var(--muted); font-style: italic; margin: 10px 0; }
+.rp-fbrow { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--ink); }
+.rp-tag { flex-shrink: 0; font-size: 10.5px; font-weight: 800; letter-spacing: 0.04em; padding: 3px 9px; border-radius: 6px; margin-top: 1px; }
+.rp-tag.good { color: #1a8f4a; background: #e7f8ee; }
+.rp-tag.warn { color: #c0344b; background: #fdeaee; }
 .rp-actions { display: flex; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
 @media (max-width: 700px) {
   .rp-hero { grid-template-columns: 1fr; }

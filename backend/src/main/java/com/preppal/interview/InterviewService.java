@@ -89,9 +89,10 @@ public class InterviewService {
         saveMetric(sid, "relevance", score.relevance());
         saveMetric(sid, "clarity", score.clarity());
 
-        // Voice/video delivery metrics (optional)
+        // Voice delivery metrics (optional)
         if (req.paceWpm() != null) saveMetric(sid, "pace_wpm", req.paceWpm());
         if (req.fillerWords() != null) saveMetric(sid, "filler_words", req.fillerWords());
+        if (req.speechClarity() != null) saveMetric(sid, "speech_clarity", req.speechClarity());
 
         return AnswerFeedbackDto.from(q.getId(), score);
     }

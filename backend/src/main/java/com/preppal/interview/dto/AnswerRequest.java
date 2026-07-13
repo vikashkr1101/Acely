@@ -9,7 +9,8 @@ import java.util.UUID;
 public record AnswerRequest(
         @NotNull UUID questionId,
         @NotBlank @Size(max = 8000) String transcript,
-        // Optional delivery metrics (voice/video mode only)
+        // Optional delivery metrics (voice mode only)
         Integer paceWpm,
-        Integer fillerWords) {
+        Integer fillerWords,
+        Integer speechClarity) {
 }

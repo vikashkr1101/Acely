@@ -6,6 +6,7 @@ import Link from "next/link";
 import { api, getToken, type InterviewDto, type Report } from "@/lib/api";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { speak, stopSpeaking, computeDelivery } from "@/lib/speech";
+import { AppShell } from "@/components/layout/AppShell";
 
 const TIPS = [
   "Structure it: the situation, what you did, and the result.",
@@ -36,6 +37,7 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
   const [needNerves, setNeedNerves] = useState(false);
   const [nerveVal, setNerveVal] = useState(5);
   const [text, setText] = useState("");
+  const [edited, setEdited] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -69,7 +71,12 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx, answered, needNerves, iv?.mode, report]);
 
-  if (report) return <ReportView report={report} />;
+  // Keep the editable transcript in sync with live speech while recording.
+  useEffect(() => {
+    if (voice.listening) setEdited(voice.transcript);
+  }, [voice.transcript, voice.listening]);
+
+  if (report) return <AppShell><ReportView report={report} /></AppShell>;
 
   if (!iv) {
     return (
@@ -85,7 +92,7 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
   if (needNerves) {
     return (
       <div className="iv">
-        <div className="iv-top"><Link href="/dashboard" className="iv-exit">← Exit</Link><span /></div>
+        <div className="iv-top"><Link href="/dashboard" className="iv-exit">← Exit</Link><div className="iv-brand"><span className="mk">P</span>PrepPal</div><span /></div>
         <div className="iv-ready">
           <div className="iv-breathe">breathe<br />in… out…</div>
           <h2>Take a breath. This is just practice. 🌱</h2>
@@ -117,7 +124,7 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
   const allAnswered = iv.questions.every((x) => x.answered);
   const tip = TIPS[idx % TIPS.length];
 
-  async function submit(transcript: string, delivery?: { paceWpm?: number; fillerWords: number }) {
+  async function submit(transcript: string, delivery?: { paceWpm?: number; fillerWords: number; speechClarity?: number }) {
     if (!transcript.trim() || !q) return;
     setBusy(true);
     setError("");
@@ -133,11 +140,14 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
   }
   function submitVoice() {
     voice.stop();
-    submit(voice.transcript, computeDelivery(voice.transcript, voice.durationMs()));
+    const finalText = (edited || voice.transcript).trim();
+    const clarity = voice.clarity();
+    submit(finalText, { ...computeDelivery(finalText, voice.durationMs()), speechClarity: clarity ?? undefined });
   }
   function next() {
     setAnswered(false);
     setText("");
+    setEdited("");
     voice.reset();
     if (idx < total - 1) setIdx(idx + 1);
   }
@@ -157,6 +167,7 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
     <div className="iv">
       <div className="iv-top">
         <Link href="/dashboard" className="iv-exit">← Exit</Link>
+        <div className="iv-brand"><span className="mk">P</span>PrepPal</div>
         <div className="iv-meta">
           <span className="iv-dots">{iv.questions.map((_, i) => <i key={i} className={i < idx ? "on" : i === idx ? "cur" : ""} />)}</span>
           <span className="iv-pill">{isVoice ? "🎤 Voice" : "⌨️ Text"} · Q{idx + 1} of {total}</span>
@@ -184,15 +195,21 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
             isVoice ? (
               <>
                 <div className="iv-transcript">
-                  <div className="iv-tlabel">Your answer, live</div>
-                  <p>{voice.transcript || (voice.listening ? "Listening…" : "Tap the mic and start speaking.")}{voice.listening && <span className="iv-caret" />}</p>
+                  <div className="iv-tlabel">{voice.listening ? "Your answer, live" : "Your answer — fix any mis-heard words ✏️"}</div>
+                  {voice.listening ? (
+                    <p>{voice.transcript || "Listening…"}<span className="iv-caret" /></p>
+                  ) : edited ? (
+                    <textarea className="iv-textarea" value={edited} onChange={(e) => setEdited(e.target.value)} rows={4} />
+                  ) : (
+                    <p style={{ color: "var(--faint)" }}>Tap the mic and start speaking.</p>
+                  )}
                 </div>
                 {!voice.supported && <p className="iv-err">Voice isn&apos;t supported here — please use Chrome, or start a text mock.</p>}
                 <div className="iv-tip">💡 <span>{tip}</span></div>
                 <div className="iv-controls">
                   <button className={`iv-mic${voice.listening ? " live" : ""}`} onClick={voice.listening ? voice.stop : voice.start} aria-label={voice.listening ? "Stop" : "Speak"}>{voice.listening ? "■" : "🎤"}</button>
                   <span className="iv-hint">{voice.listening ? "Recording — tap to pause" : "Tap to speak"}</span>
-                  <button className="iv-submit" onClick={submitVoice} disabled={busy || !voice.transcript.trim()}>{busy ? "Scoring…" : "Submit answer →"}</button>
+                  <button className="iv-submit" onClick={submitVoice} disabled={busy || !(edited || voice.transcript).trim()}>{busy ? "Scoring…" : "Submit answer →"}</button>
                 </div>
               </>
             ) : (
@@ -236,7 +253,13 @@ function tagFor(score: number | null) {
 function subStyle(v: number): CSSProperties {
   if (v >= 80) return { background: "#e7f8ee", color: "#1a8f4a" };
   if (v >= 60) return { background: "#fff6e6", color: "#a5720a" };
-  return { background: "var(--soft)", color: "var(--brandink)" };
+  return { background: "#fdeaee", color: "#c0344b" };
+}
+function scoreColor(v: number | null) {
+  if (v == null) return "var(--brand)";
+  if (v >= 75) return "#22c55e";
+  if (v >= 55) return "#f59e0b";
+  return "#ef4455";
 }
 
 function ReportView({ report }: { report: Report }) {
@@ -255,11 +278,10 @@ function ReportView({ report }: { report: Report }) {
   const focus = `Add more ${dims[dims.length - 1][0]}`;
 
   const showAfter = report.nervesAfter == null && !afterDone;
+  const hasSubs = report.communication + report.technical + report.clarity + report.relevance > 0;
 
   return (
-    <main className="rp">
-      <Link href="/dashboard" className="rp-back">← Dashboard</Link>
-
+    <div className="rp">
       {showAfter && (
         <div className="rp-box" style={{ textAlign: "center", margin: "16px 0" }}>
           <h4 style={{ justifyContent: "center", fontSize: 16 }}>You did it! How do you feel now? 😌</h4>
@@ -290,18 +312,24 @@ function ReportView({ report }: { report: Report }) {
         </div>
       )}
 
-      <div className="rp-hero">
-        <div className="rp-bigring">
-          <div className="rp-ring" style={{ ["--v" as string]: report.overallScore ?? 0 } as CSSProperties}><b>{report.overallScore ?? "—"}</b></div>
+      {hasSubs ? (
+        <div className="rp-hero">
+          <div className="rp-bigring">
+            <div className="rp-ring" style={{ ["--v" as string]: report.overallScore ?? 0, ["--ring" as string]: scoreColor(report.overallScore) } as CSSProperties}><b>{report.overallScore ?? "—"}</b></div>
+            <span className="tag">{tagFor(report.overallScore)}</span>
+          </div>
+          <div className="rp-subs">
+            {([["Communication", report.communication], ["Technical", report.technical], ["Clarity", report.clarity], ["Relevance", report.relevance]] as [string, number][]).map(([label, val]) => (
+              <div className="rp-sub" key={label}><div className="sring" style={subStyle(val)}>{val}</div><div className="sl">{label}</div></div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="rp-bigring" style={{ maxWidth: 220, margin: "0 auto 18px" }}>
+          <div className="rp-ring" style={{ ["--v" as string]: report.overallScore ?? 0, ["--ring" as string]: scoreColor(report.overallScore) } as CSSProperties}><b>{report.overallScore ?? "—"}</b></div>
           <span className="tag">{tagFor(report.overallScore)}</span>
         </div>
-        <div className="rp-subs">
-          <div className="rp-sub"><div className="sring" style={subStyle(report.communication)}>{report.communication}</div><div className="sl">Communication</div></div>
-          <div className="rp-sub"><div className="sring" style={subStyle(report.technical)}>{report.technical}</div><div className="sl">Technical</div></div>
-          <div className="rp-sub"><div className="sring" style={subStyle(report.clarity)}>{report.clarity}</div><div className="sl">Clarity</div></div>
-          <div className="rp-sub"><div className="sring" style={subStyle(report.relevance)}>{report.relevance}</div><div className="sl">Relevance</div></div>
-        </div>
-      </div>
+      )}
 
       {report.summary && (
         <div className="rp-box" style={{ marginBottom: 18 }}>
@@ -315,11 +343,18 @@ function ReportView({ report }: { report: Report }) {
         <div className="rp-box"><h4>🎯 Focus next</h4><ul style={{ margin: 0, paddingLeft: 16 }}><li>{focus}</li><li>Quantify your impact (numbers, outcomes)</li><li>Retry to lock in the improvement</li></ul></div>
       </div>
 
+      <h3 className="rp-qs-title">Question by question</h3>
       <div className="rp-qs">
         {report.questions.map((qq) => (
           <div className="rp-q" key={qq.id}>
-            <div className="qh"><span className="qb">Q{qq.ordinal}</span><span className="qt">{qq.text}</span><span className="qsc">{qq.score ?? "—"}</span></div>
-            {qq.feedback && <p className="qfb">{qq.feedback}</p>}
+            <div className="qh"><span className="qb">Q{qq.ordinal}</span><span className="qt">{qq.text}</span><span className="qsc" style={{ color: scoreColor(qq.score) }}>{qq.score ?? "—"}</span></div>
+            {qq.answer && <div className="rp-ans">“{qq.answer}”</div>}
+            {qq.feedback && (
+              <div className="rp-fbrow">
+                <span className={`rp-tag ${(qq.score ?? 0) >= 70 ? "good" : "warn"}`}>{(qq.score ?? 0) >= 70 ? "FEEDBACK" : "IMPROVE"}</span>
+                <span>{qq.feedback}</span>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -328,6 +363,6 @@ function ReportView({ report }: { report: Report }) {
         <Link href="/mock/new" className="btn">🔁 Another mock</Link>
         <Link href="/dashboard" className="btn o">Back to dashboard</Link>
       </div>
-    </main>
+    </div>
   );
 }

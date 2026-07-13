@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 // Minimal typings for the Web Speech API (not in the standard DOM lib).
 interface RecognitionAlt {
   transcript: string;
+  confidence: number;
 }
 interface RecognitionResult {
   0: RecognitionAlt;
@@ -40,6 +41,8 @@ export function useSpeechRecognition() {
   const wantRef = useRef(false); // does the user still want to be listening?
   const startedAtRef = useRef(0);
   const durationRef = useRef(0);
+  const confSumRef = useRef(0);
+  const confCountRef = useRef(0);
 
   useEffect(() => {
     const w = window as unknown as {
@@ -60,8 +63,15 @@ export function useSpeechRecognition() {
       let interim = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const r = e.results[i];
-        if (r.isFinal) finalRef.current += r[0].transcript;
-        else interim += r[0].transcript;
+        if (r.isFinal) {
+          finalRef.current += r[0].transcript;
+          if (r[0].confidence > 0) {
+            confSumRef.current += r[0].confidence;
+            confCountRef.current++;
+          }
+        } else {
+          interim += r[0].transcript;
+        }
       }
       setTranscript((finalRef.current + interim).replace(/\s+/g, " ").trim());
     };
@@ -125,6 +135,8 @@ export function useSpeechRecognition() {
     finalRef.current = "";
     startedAtRef.current = 0;
     durationRef.current = 0;
+    confSumRef.current = 0;
+    confCountRef.current = 0;
     setTranscript("");
     setListening(false);
   }
@@ -132,5 +144,9 @@ export function useSpeechRecognition() {
   const durationMs = () =>
     durationRef.current || (startedAtRef.current ? Date.now() - startedAtRef.current : 0);
 
-  return { supported, listening, transcript, start, stop, reset, durationMs };
+  /** Recogniser confidence 0-100 (best-effort; null if the browser gave none). */
+  const clarity = () =>
+    confCountRef.current ? Math.round((confSumRef.current / confCountRef.current) * 100) : null;
+
+  return { supported, listening, transcript, start, stop, reset, durationMs, clarity };
 }

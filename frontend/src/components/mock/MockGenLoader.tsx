@@ -1,6 +1,7 @@
 export function MockGenLoader() {
   return (
     <div className="mockgen">
+      <div className="mockgen-brand"><span className="mk">P</span>PrepPal</div>
       <div className="mockgen-orb" />
       <h3>Preparing your interview…</h3>
       <p>Your AI coach is tailoring the questions to your role. Take a breath. 🌱</p>

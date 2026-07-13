@@ -30,6 +30,7 @@ export interface QuestionDto {
   ordinal: number;
   text: string;
   answered: boolean;
+  answer: string | null;
   feedback: string | null;
   modelAnswer: string | null;
   score: number | null;
@@ -152,7 +153,7 @@ export const api = {
     sessionId: string,
     questionId: string,
     transcript: string,
-    delivery?: { paceWpm?: number; fillerWords?: number }
+    delivery?: { paceWpm?: number; fillerWords?: number; speechClarity?: number }
   ) =>
     request<AnswerFeedback>(`/api/interviews/${sessionId}/answer`, {
       method: "POST",
