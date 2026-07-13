@@ -29,6 +29,10 @@ public class User {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private String plan = "FREE";   // FREE | PRO
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
