@@ -523,6 +523,255 @@ h4 {
   font-weight: 600;
 }
 
+/* dashboard: start card + usage + recent */
+.start-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--grad);
+  color: #fff;
+  border-radius: 18px;
+  padding: 24px 26px;
+  box-shadow: var(--csh);
+  transition: transform 0.18s;
+}
+.start-card:hover {
+  transform: translateY(-3px);
+}
+.start-title {
+  font-size: 20px;
+  font-weight: 800;
+}
+.start-sub {
+  font-size: 13.5px;
+  opacity: 0.92;
+  margin-top: 4px;
+}
+.start-cta {
+  font-weight: 800;
+  white-space: nowrap;
+}
+.usage-line {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 14px 2px 0;
+}
+.recent {
+  margin-top: 34px;
+}
+.recent-h {
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+.recent-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  transition: border-color 0.15s;
+}
+.recent-row:hover {
+  border-color: var(--brand);
+}
+.recent-role {
+  font-weight: 700;
+}
+.recent-meta {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* mock flow */
+.mock-wrap {
+  max-width: 720px;
+  padding-top: 32px;
+  padding-bottom: 60px;
+}
+.back-link {
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 13.5px;
+}
+.back-link:hover {
+  color: var(--ink);
+}
+.mock-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.mock-progress {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--faint);
+}
+.mock-h1 {
+  font-size: 28px;
+  font-weight: 900;
+  margin-bottom: 8px;
+}
+.mock-lead {
+  color: var(--muted);
+  margin: 0 0 24px;
+}
+.setup-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 26px;
+  box-shadow: var(--sh);
+}
+.field textarea,
+.field select {
+  width: 100%;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg2);
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  resize: vertical;
+}
+.field em {
+  color: var(--faint);
+  font-style: normal;
+  font-weight: 500;
+}
+.qcard {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow: var(--csh);
+}
+.qlabel {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--brand);
+  margin-bottom: 8px;
+}
+.qtext {
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.35;
+  margin-bottom: 20px;
+}
+.answer-box {
+  width: 100%;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg2);
+  padding: 14px;
+  font-family: inherit;
+  font-size: 14.5px;
+  color: var(--ink);
+  resize: vertical;
+  margin-bottom: 14px;
+}
+.answer-box:focus {
+  outline: none;
+  border-color: var(--brand);
+}
+.fb-card {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+.fb-score {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.fb-score b {
+  color: var(--brand);
+  font-size: 20px;
+}
+.fb-text {
+  font-size: 14.5px;
+  margin: 0 0 14px;
+}
+.fb-model {
+  margin-bottom: 16px;
+  font-size: 13.5px;
+}
+.fb-model summary {
+  cursor: pointer;
+  color: var(--brandink);
+  font-weight: 700;
+}
+.fb-model p {
+  color: var(--muted);
+  margin-top: 8px;
+}
+/* report */
+.report-hero {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-bottom: 26px;
+}
+.report-score {
+  font-size: 46px;
+  font-weight: 900;
+  color: var(--brand);
+  line-height: 1;
+  white-space: nowrap;
+}
+.report-score small {
+  font-size: 16px;
+  color: var(--muted);
+}
+.report-q {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+}
+.report-qh {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 14.5px;
+}
+.report-qtext {
+  flex: 1;
+}
+.qbadge {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--brandink);
+  background: var(--soft);
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+.report-qscore {
+  font-weight: 800;
+  color: var(--brand);
+}
+.report-fb {
+  font-size: 13.5px;
+  color: var(--muted);
+  margin: 10px 0 0;
+}
+.report-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;

@@ -25,6 +25,42 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface QuestionDto {
+  id: string;
+  ordinal: number;
+  text: string;
+  answered: boolean;
+  feedback: string | null;
+  modelAnswer: string | null;
+  score: number | null;
+}
+export interface InterviewDto {
+  id: string;
+  role: string;
+  mode: string;
+  status: "IN_PROGRESS" | "COMPLETED";
+  overallScore: number | null;
+  summary: string | null;
+  createdAt: string;
+  questions: QuestionDto[];
+}
+export interface AnswerFeedback {
+  questionId: string;
+  score: number;
+  communication: number;
+  technicalDepth: number;
+  relevance: number;
+  clarity: number;
+  feedback: string;
+  modelAnswer: string;
+}
+export interface Usage {
+  plan: string;
+  used: number;
+  limit: number;
+  remaining: number;
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const res = await fetch(`${API_BASE}${path}`, {
@@ -65,4 +101,25 @@ export const api = {
     }),
 
   me: () => request<User>("/api/auth/me"),
+
+  usage: () => request<Usage>("/api/me/usage"),
+
+  createInterview: (role: string, jd: string, count: number) =>
+    request<InterviewDto>("/api/interviews", {
+      method: "POST",
+      body: JSON.stringify({ role, jd, count }),
+    }),
+
+  getInterview: (id: string) => request<InterviewDto>(`/api/interviews/${id}`),
+
+  listInterviews: () => request<InterviewDto[]>("/api/interviews"),
+
+  answer: (sessionId: string, questionId: string, transcript: string) =>
+    request<AnswerFeedback>(`/api/interviews/${sessionId}/answer`, {
+      method: "POST",
+      body: JSON.stringify({ questionId, transcript }),
+    }),
+
+  complete: (sessionId: string) =>
+    request<InterviewDto>(`/api/interviews/${sessionId}/complete`, { method: "POST" }),
 };
