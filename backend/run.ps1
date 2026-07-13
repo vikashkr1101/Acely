@@ -1,6 +1,9 @@
 # Loads backend/.env into environment variables, then starts the Spring Boot app.
 # Usage (from the backend folder):  .\run.ps1
 
+# Always run from this script's own folder (so double-click / any cwd works)
+Set-Location $PSScriptRoot
+
 # Make sure Java 21 is available
 if (-not $env:JAVA_HOME) {
     $env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot"
