@@ -85,6 +85,18 @@ export interface Dashboard {
   confidenceJourney: { index: number; nervousness: number }[];
   recent: { id: string; role: string; status: string; score: number | null; createdAt: string }[];
 }
+export interface ReportSummary {
+  id: string;
+  role: string;
+  mode: string;
+  status: "IN_PROGRESS" | "COMPLETED";
+  overallScore: number | null;
+  questionCount: number;
+  nervesBefore: number | null;
+  nervesAfter: number | null;
+  topSkill: string | null;
+  createdAt: string;
+}
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
@@ -148,6 +160,8 @@ export const api = {
   report: (id: string) => request<Report>(`/api/interviews/${id}/report`),
 
   listInterviews: () => request<InterviewDto[]>("/api/interviews"),
+
+  reports: () => request<ReportSummary[]>("/api/reports"),
 
   answer: (
     sessionId: string,

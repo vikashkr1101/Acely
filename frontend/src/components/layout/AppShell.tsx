@@ -3,12 +3,13 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { FiGrid, FiMic, FiLogOut } from "react-icons/fi";
+import { FiGrid, FiMic, FiBarChart2, FiLogOut } from "react-icons/fi";
 import { api, clearToken, getToken, type User } from "@/lib/api";
 
 const NAV = [
-  { href: "/dashboard", label: "Dashboard", Icon: FiGrid },
-  { href: "/mock/new", label: "Practice", Icon: FiMic },
+  { href: "/dashboard", label: "Dashboard", Icon: FiGrid, match: (p: string) => p === "/dashboard" },
+  { href: "/mock/new", label: "Practice", Icon: FiMic, match: (p: string) => p.startsWith("/mock") },
+  { href: "/reports", label: "Reports", Icon: FiBarChart2, match: (p: string) => p.startsWith("/reports") },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -41,8 +42,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Link>
 
         <nav className="side-nav">
-          {NAV.map(({ href, label, Icon }) => (
-            <Link key={href} href={href} className={`side-link${pathname === href ? " active" : ""}`}>
+          {NAV.map(({ href, label, Icon, match }) => (
+            <Link key={href} href={href} className={`side-link${match(pathname) ? " active" : ""}`}>
               <Icon className="ic" /> <span className="side-word">{label}</span>
             </Link>
           ))}

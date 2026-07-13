@@ -19,8 +19,11 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.YearMonth;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -152,6 +155,49 @@ public class InterviewService {
         return ms.stream()
                 .filter(m -> m.getMetricKey().equals("nervousness") && m.getPhase() == phase)
                 .map(m -> m.getValue().intValue()).findFirst().orElse(null);
+    }
+
+    // ── Reports list: one lightweight summary per mock ──────────────────────
+    @Transactional(readOnly = true)
+    public List<ReportSummary> reportList(User user) {
+        List<InterviewSession> all = sessions.findByUserIdOrderByCreatedAtDesc(user.getId());
+        List<UUID> ids = all.stream().map(InterviewSession::getId).toList();
+        Map<UUID, List<SessionMetric>> byId = ids.isEmpty() ? Map.of()
+                : metrics.findBySessionIdIn(ids).stream().collect(Collectors.groupingBy(SessionMetric::getSessionId));
+
+        List<ReportSummary> out = new ArrayList<>();
+        for (InterviewSession s : all) {
+            List<SessionMetric> ms = byId.getOrDefault(s.getId(), List.of());
+            out.add(new ReportSummary(s.getId(), s.getRole(), s.getMode(), s.getStatus().name(),
+                    s.getOverallScore(), s.getQuestions().size(),
+                    nerve(ms, MetricPhase.BEFORE), nerve(ms, MetricPhase.AFTER), topSkill(ms), s.getCreatedAt()));
+        }
+        return out;
+    }
+
+    private static final String[] SKILL_KEYS = {"communication", "technical_depth", "clarity", "relevance"};
+
+    private String topSkill(List<SessionMetric> ms) {
+        String best = null;
+        int bestVal = 0;
+        for (String key : SKILL_KEYS) {
+            int v = metricAvg(ms, key);
+            if (v > bestVal) {
+                bestVal = v;
+                best = key;
+            }
+        }
+        return best == null ? null : skillLabel(best);
+    }
+
+    private String skillLabel(String key) {
+        return switch (key) {
+            case "technical_depth" -> "Technical";
+            case "communication" -> "Communication";
+            case "clarity" -> "Clarity";
+            case "relevance" -> "Relevance";
+            default -> key;
+        };
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
