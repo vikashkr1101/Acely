@@ -60,6 +60,16 @@ export interface Usage {
   limit: number;
   remaining: number;
 }
+export interface Dashboard {
+  readiness: number;
+  mocksDone: number;
+  avgScore: number;
+  streakDays: number;
+  scoreTrend: number[];
+  skills: { communication: number; technical: number; clarity: number; relevance: number };
+  confidenceJourney: { index: number; nervousness: number }[];
+  recent: { id: string; role: string; status: string; score: number | null; createdAt: string }[];
+}
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
@@ -104,20 +114,33 @@ export const api = {
 
   usage: () => request<Usage>("/api/me/usage"),
 
-  createInterview: (role: string, jd: string, count: number) =>
+  dashboard: () => request<Dashboard>("/api/dashboard"),
+
+  nerves: (sessionId: string, phase: "BEFORE" | "AFTER", nervousness: number) =>
+    request<void>(`/api/interviews/${sessionId}/nerves`, {
+      method: "POST",
+      body: JSON.stringify({ phase, nervousness }),
+    }),
+
+  createInterview: (role: string, jd: string, count: number, mode: "TEXT" | "VOICE" = "TEXT") =>
     request<InterviewDto>("/api/interviews", {
       method: "POST",
-      body: JSON.stringify({ role, jd, count }),
+      body: JSON.stringify({ role, jd, count, mode }),
     }),
 
   getInterview: (id: string) => request<InterviewDto>(`/api/interviews/${id}`),
 
   listInterviews: () => request<InterviewDto[]>("/api/interviews"),
 
-  answer: (sessionId: string, questionId: string, transcript: string) =>
+  answer: (
+    sessionId: string,
+    questionId: string,
+    transcript: string,
+    delivery?: { paceWpm?: number; fillerWords?: number }
+  ) =>
     request<AnswerFeedback>(`/api/interviews/${sessionId}/answer`, {
       method: "POST",
-      body: JSON.stringify({ questionId, transcript }),
+      body: JSON.stringify({ questionId, transcript, ...delivery }),
     }),
 
   complete: (sessionId: string) =>

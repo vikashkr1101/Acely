@@ -10,6 +10,7 @@ export default function NewMockPage() {
   const [role, setRole] = useState("");
   const [jd, setJd] = useState("");
   const [count, setCount] = useState(4);
+  const [mode, setMode] = useState<"TEXT" | "VOICE">("TEXT");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -22,7 +23,7 @@ export default function NewMockPage() {
     setError("");
     setLoading(true);
     try {
-      const mock = await api.createInterview(role, jd, count);
+      const mock = await api.createInterview(role, jd, count, mode);
       router.push(`/mock/${mock.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not start the mock");
@@ -53,6 +54,18 @@ export default function NewMockPage() {
             ))}
           </select>
         </label>
+
+        <div className="field">
+          <span>How do you want to practise?</span>
+          <div className="mode-toggle">
+            <button type="button" className={`mode-opt${mode === "TEXT" ? " active" : ""}`} onClick={() => setMode("TEXT")}>
+              ⌨️ Text<em>Type your answers</em>
+            </button>
+            <button type="button" className={`mode-opt${mode === "VOICE" ? " active" : ""}`} onClick={() => setMode("VOICE")}>
+              🎤 Voice<em>Speak, like a real interview</em>
+            </button>
+          </div>
+        </div>
 
         {error && <p className="auth-error">{error}</p>}
 

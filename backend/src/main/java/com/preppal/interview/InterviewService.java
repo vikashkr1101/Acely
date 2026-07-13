@@ -81,6 +81,18 @@ public class InterviewService {
         q.setModelAnswer(score.modelAnswer());
         q.setScore(score.overall());
         questions.save(q);
+
+        // Per-answer skill scores (feed the dashboard skill breakdown)
+        UUID sid = session.getId();
+        saveMetric(sid, "communication", score.communication());
+        saveMetric(sid, "technical_depth", score.technicalDepth());
+        saveMetric(sid, "relevance", score.relevance());
+        saveMetric(sid, "clarity", score.clarity());
+
+        // Voice/video delivery metrics (optional)
+        if (req.paceWpm() != null) saveMetric(sid, "pace_wpm", req.paceWpm());
+        if (req.fillerWords() != null) saveMetric(sid, "filler_words", req.fillerWords());
+
         return AnswerFeedbackDto.from(q.getId(), score);
     }
 
@@ -130,6 +142,10 @@ public class InterviewService {
     private long mocksThisMonth(UUID userId) {
         Instant monthStart = YearMonth.now(ZoneOffset.UTC).atDay(1).atStartOfDay().toInstant(ZoneOffset.UTC);
         return sessions.countByUserIdAndCreatedAtAfter(userId, monthStart);
+    }
+
+    private void saveMetric(UUID sessionId, String key, int value) {
+        metrics.save(new SessionMetric(sessionId, key, MetricPhase.PER_QUESTION, BigDecimal.valueOf(value)));
     }
 
     private InterviewSession ownedSession(User user, UUID sessionId) {
