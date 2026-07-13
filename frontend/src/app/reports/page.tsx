@@ -26,6 +26,7 @@ export default function ReportsPage() {
   const router = useRouter();
   const [reports, setReports] = useState<ReportSummary[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
 
   useEffect(() => {
@@ -35,7 +36,7 @@ export default function ReportsPage() {
     }
     api.reports()
       .then(setReports)
-      .catch(() => setReports([]))
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [router]);
 
@@ -63,6 +64,18 @@ export default function ReportsPage() {
     <AppShell>
       {loading ? (
         <Loader label="Loading your reports…" />
+      ) : error ? (
+        <div className="rpl">
+          <div className="rpl-head">
+            <h1>Reports</h1>
+            <p>Every mock you finish shows up here — scores, nerves, and where to focus next.</p>
+          </div>
+          <div className="rpl-empty">
+            <div className="em">🔌</div>
+            <h3>Couldn&apos;t load your reports</h3>
+            <p>The server didn&apos;t respond. Make sure the backend is running, then refresh.</p>
+          </div>
+        </div>
       ) : (reports ?? []).length === 0 ? (
         <div className="rpl">
           <div className="rpl-head">
