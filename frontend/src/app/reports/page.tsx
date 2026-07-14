@@ -125,7 +125,7 @@ export default function ReportsPage() {
                   ? r.nervesBefore - r.nervesAfter
                   : null;
               return (
-                <Link href={`/mock/${r.id}`} key={r.id} className="rpl-row">
+                <Link href={inProgress ? `/mock/${r.id}` : `/reports/${r.id}`} key={r.id} className="rpl-row">
                   <div
                     className="rpl-ring2"
                     style={{ ["--v" as string]: `${r.overallScore ?? 0}`, ["--ring" as string]: scoreColor(r.overallScore) }}

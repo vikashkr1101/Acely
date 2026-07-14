@@ -226,7 +226,7 @@ export default function DashboardPage() {
             {recent.slice(0, 4).map((m) => {
               const done = m.status === "COMPLETED";
               return (
-                <Link href={`/mock/${m.id}`} key={m.id} className="db-mock">
+                <Link href={done ? `/reports/${m.id}` : `/mock/${m.id}`} key={m.id} className="db-mock">
                   <span className="db-mk">{initials(m.role)}</span>
                   <span className="main">
                     <span className="role">{m.role}</span>
