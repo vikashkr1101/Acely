@@ -103,7 +103,12 @@ export function ReportView({ report, userName = "" }: { report: Report; userName
       <div className="rp-head">
         <div>
           <h1>Your mock report 🎯</h1>
-          <div className="sub">{report.role} · {report.mode === "VOICE" ? "Voice" : "Text"} · {report.questions.length} questions · {fmtDate(report.createdAt)}</div>
+          <div className="rp-meta-chips">
+            <span className="chip">{report.role}</span>
+            <span className="chip">{report.mode === "VOICE" ? "🎙 Voice" : "⌨️ Text"}</span>
+            <span className="chip">{report.questions.length} questions</span>
+            <span className="chip">{fmtDate(report.createdAt)}</span>
+          </div>
         </div>
         <button className="rp-dl" onClick={handleDownload} disabled={downloading}>{downloading ? "Preparing…" : "⬇ Download PDF"}</button>
       </div>
@@ -116,11 +121,13 @@ export function ReportView({ report, userName = "" }: { report: Report; userName
       )}
 
       <div className="rp-scorehero">
-        <div className="rp-ring" style={{ ["--v" as string]: report.overallScore ?? 0, ["--ring" as string]: scoreColor(report.overallScore) } as CSSProperties}><b>{report.overallScore ?? "—"}</b></div>
+        <div className="rp-ring-side">
+          <div className="rp-ring" style={{ ["--v" as string]: report.overallScore ?? 0, ["--ring" as string]: scoreColor(report.overallScore) } as CSSProperties}><b>{report.overallScore ?? "—"}</b></div>
+          <span className="rp-ring-cap">out of 100</span>
+        </div>
         <div className="rp-scoremeta">
           <span className="rp-scoretag" style={subStyle(report.overallScore ?? 0)}>{tagFor(report.overallScore)}</span>
-          <h2>You scored {report.overallScore ?? "—"}<span>/100</span></h2>
-          <p>{coachLine(report.overallScore)}</p>
+          <h2 className="rp-coachline">{coachLine(report.overallScore)}</h2>
           {hasSubs && (
             <div className="rp-subrow">
               {([["Communication", report.communication], ["Technical", report.technical], ["Clarity", report.clarity], ["Relevance", report.relevance]] as [string, number][]).map(([label, val]) => (

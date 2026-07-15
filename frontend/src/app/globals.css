@@ -1469,15 +1469,18 @@ h4 {
 .rp-tag.warn { color: #c0344b; background: #fdeaee; }
 .rp-actions { display: flex; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
 
+/* report header meta chips */
+.rp-meta-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
 /* redesigned report: score hero */
-.rp-scorehero { display: flex; align-items: center; gap: 26px; background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 24px 28px; box-shadow: var(--sh); margin-bottom: 16px; }
-.rp-scorehero .rp-ring { width: 116px; height: 116px; flex-shrink: 0; }
+.rp-scorehero { display: flex; align-items: center; gap: 28px; background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 26px 30px; box-shadow: var(--sh); margin-bottom: 16px; }
+.rp-ring-side { display: flex; flex-direction: column; align-items: center; gap: 9px; flex-shrink: 0; }
+.rp-scorehero .rp-ring { width: 116px; height: 116px; }
 .rp-scorehero .rp-ring b { font-size: 34px; }
+.rp-ring-cap { font-size: 10.5px; font-weight: 700; color: var(--faint); text-transform: uppercase; letter-spacing: 0.06em; }
 .rp-scoremeta { flex: 1; min-width: 0; }
-.rp-scoretag { display: inline-block; font-size: 11.5px; font-weight: 800; padding: 5px 12px; border-radius: 999px; margin-bottom: 10px; }
-.rp-scoremeta h2 { font-size: 28px; font-weight: 900; margin: 0 0 8px; letter-spacing: -0.02em; }
-.rp-scoremeta h2 span { font-size: 17px; color: var(--muted); font-weight: 700; }
-.rp-scoremeta > p { font-size: 13.5px; color: var(--muted); margin: 0; max-width: 54ch; line-height: 1.55; }
+.rp-scoretag { display: inline-block; font-size: 11.5px; font-weight: 800; padding: 5px 12px; border-radius: 999px; margin-bottom: 12px; }
+.rp-coachline { font-size: 20px; font-weight: 800; color: var(--ink); margin: 0; line-height: 1.4; letter-spacing: -0.01em; max-width: 40ch; text-wrap: balance; }
 .rp-subrow { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
 .rp-subchip { display: flex; flex-direction: column; align-items: center; background: var(--bg2); border-radius: 12px; padding: 8px 16px; min-width: 76px; }
 .rp-subchip .v { font-weight: 900; font-size: 17px; }
