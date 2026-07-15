@@ -12,6 +12,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   const { id } = use(params);
   const router = useRouter();
   const [report, setReport] = useState<Report | null>(null);
+  const [userName, setUserName] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -20,6 +21,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
       router.replace("/login");
       return;
     }
+    api.me().then((u) => setUserName(u.name)).catch(() => {});
     api.report(id)
       .then(setReport)
       .catch(() => setError("We couldn't load this report."))
@@ -38,7 +40,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
           <Link href="/reports" className="btn" style={{ marginTop: 16 }}>← Back to reports</Link>
         </div>
       ) : (
-        <ReportView report={report} />
+        <ReportView report={report} userName={userName} />
       )}
     </AppShell>
   );

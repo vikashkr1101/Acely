@@ -1468,9 +1468,48 @@ h4 {
 .rp-tag.good { color: #1a8f4a; background: #e7f8ee; }
 .rp-tag.warn { color: #c0344b; background: #fdeaee; }
 .rp-actions { display: flex; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+
+/* redesigned report: score hero */
+.rp-scorehero { display: flex; align-items: center; gap: 26px; background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 24px 28px; box-shadow: var(--sh); margin-bottom: 16px; }
+.rp-scorehero .rp-ring { width: 116px; height: 116px; flex-shrink: 0; }
+.rp-scorehero .rp-ring b { font-size: 34px; }
+.rp-scoremeta { flex: 1; min-width: 0; }
+.rp-scoretag { display: inline-block; font-size: 11.5px; font-weight: 800; padding: 5px 12px; border-radius: 999px; margin-bottom: 10px; }
+.rp-scoremeta h2 { font-size: 28px; font-weight: 900; margin: 0 0 8px; letter-spacing: -0.02em; }
+.rp-scoremeta h2 span { font-size: 17px; color: var(--muted); font-weight: 700; }
+.rp-scoremeta > p { font-size: 13.5px; color: var(--muted); margin: 0; max-width: 54ch; line-height: 1.55; }
+.rp-subrow { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.rp-subchip { display: flex; flex-direction: column; align-items: center; background: var(--bg2); border-radius: 12px; padding: 8px 16px; min-width: 76px; }
+.rp-subchip .v { font-weight: 900; font-size: 17px; }
+.rp-subchip .l { font-size: 10px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 1px; }
+
+/* coach note */
+.rp-note { display: flex; gap: 16px; align-items: flex-start; background: var(--grad-soft); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; }
+.rp-note-orb { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; background: var(--iv-orb); box-shadow: 0 6px 16px -6px var(--iv-glow1); }
+.rp-note h4 { font-size: 12px; font-weight: 800; margin: 0 0 6px; color: var(--brandink); text-transform: uppercase; letter-spacing: 0.06em; }
+.rp-note p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--ink); }
+
+/* themed strength / focus cards */
+.rp-card { border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; background: var(--card); box-shadow: var(--sh); }
+.rp-card-h { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 800; margin-bottom: 13px; }
+.rp-card-h .ic { width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; flex-shrink: 0; }
+.rp-card.good .rp-card-h .ic { background: #e7f8ee; color: #1a8f4a; }
+.rp-card.focus .rp-card-h .ic { background: var(--soft); color: var(--brandink); }
+.rp-card ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.rp-card li { display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px; color: var(--ink); line-height: 1.45; }
+.rp-card li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; margin-top: 7px; flex-shrink: 0; }
+.rp-card.good li::before { background: #1a8f4a; }
+.rp-card.focus li::before { background: var(--brand); }
+
+/* success toast */
+.rp-toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; font-weight: 700; font-size: 13.5px; padding: 12px 20px; border-radius: 12px; box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.4); z-index: 100; animation: toastin 0.28s ease; }
+@keyframes toastin { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
 @media (max-width: 700px) {
   .rp-hero { grid-template-columns: 1fr; }
   .rp-subs, .rp-two { grid-template-columns: 1fr; }
+  .rp-scorehero { flex-direction: column; text-align: center; }
+  .rp-subrow { justify-content: center; }
 }
 
 /* ── dashboard (glance home) ── */
@@ -1579,7 +1618,8 @@ h4 {
   .rp-print-head .pph-title { font-weight: 800; font-size: 13px; }
   .rp-print-head .pph-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
   .rp-head h1 { font-size: 22px; }
-  .rp-head, .rp-nerve, .rp-hero, .rp-sub, .rp-box, .rp-q { break-inside: avoid; }
+  .rp-head, .rp-nerve, .rp-scorehero, .rp-note, .rp-card, .rp-box, .rp-q { break-inside: avoid; }
+  .rp-toast { display: none !important; }
   .rp-qs-title { break-after: avoid; }
 }
 

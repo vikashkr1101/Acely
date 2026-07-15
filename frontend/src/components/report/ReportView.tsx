@@ -33,11 +33,20 @@ function fmtDate(iso: string) {
   const d = new Date(iso);
   return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
+function coachLine(v: number | null) {
+  if (v == null || v === 0) return "You've made a start — the first mock is the hardest. Keep going.";
+  if (v >= 85) return "Outstanding — you're interview-ready. Go get it.";
+  if (v >= 70) return "Strong performance. A little more polish and you're there.";
+  if (v >= 50) return "Solid progress — keep practising and your score will climb.";
+  return "Early days — every mock makes you calmer and sharper.";
+}
 
-export function ReportView({ report }: { report: Report }) {
+export function ReportView({ report, userName = "" }: { report: Report; userName?: string }) {
   const [afterDone, setAfterDone] = useState(false);
   const [nerveVal, setNerveVal] = useState(5);
   const [busy, setBusy] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   const dims: [string, number][] = [
     ["communication", report.communication],
@@ -51,6 +60,20 @@ export function ReportView({ report }: { report: Report }) {
 
   const showAfter = report.nervesAfter == null && !afterDone;
   const hasSubs = report.communication + report.technical + report.clarity + report.relevance > 0;
+
+  async function handleDownload() {
+    setDownloading(true);
+    try {
+      const { downloadReportPdf } = await import("@/lib/reportPdf");
+      await downloadReportPdf(report, userName);
+      setToast("Report downloaded 🎉");
+    } catch {
+      setToast("Couldn't create the PDF — please try again.");
+    } finally {
+      setDownloading(false);
+      setTimeout(() => setToast(null), 3200);
+    }
+  }
 
   return (
     <div className="rp">
@@ -82,7 +105,7 @@ export function ReportView({ report }: { report: Report }) {
           <h1>Your mock report 🎯</h1>
           <div className="sub">{report.role} · {report.mode === "VOICE" ? "Voice" : "Text"} · {report.questions.length} questions · {fmtDate(report.createdAt)}</div>
         </div>
-        <button className="rp-dl" onClick={() => window.print()}>⬇ Download PDF</button>
+        <button className="rp-dl" onClick={handleDownload} disabled={downloading}>{downloading ? "Preparing…" : "⬇ Download PDF"}</button>
       </div>
 
       {report.nervesBefore != null && report.nervesAfter != null && (
@@ -92,35 +115,44 @@ export function ReportView({ report }: { report: Report }) {
         </div>
       )}
 
-      {hasSubs ? (
-        <div className="rp-hero">
-          <div className="rp-bigring">
-            <div className="rp-ring" style={{ ["--v" as string]: report.overallScore ?? 0, ["--ring" as string]: scoreColor(report.overallScore) } as CSSProperties}><b>{report.overallScore ?? "—"}</b></div>
-            <span className="tag">{tagFor(report.overallScore)}</span>
-          </div>
-          <div className="rp-subs">
-            {([["Communication", report.communication], ["Technical", report.technical], ["Clarity", report.clarity], ["Relevance", report.relevance]] as [string, number][]).map(([label, val]) => (
-              <div className="rp-sub" key={label}><div className="sring" style={subStyle(val)}>{val}</div><div className="sl">{label}</div></div>
-            ))}
-          </div>
+      <div className="rp-scorehero">
+        <div className="rp-ring" style={{ ["--v" as string]: report.overallScore ?? 0, ["--ring" as string]: scoreColor(report.overallScore) } as CSSProperties}><b>{report.overallScore ?? "—"}</b></div>
+        <div className="rp-scoremeta">
+          <span className="rp-scoretag" style={subStyle(report.overallScore ?? 0)}>{tagFor(report.overallScore)}</span>
+          <h2>You scored {report.overallScore ?? "—"}<span>/100</span></h2>
+          <p>{coachLine(report.overallScore)}</p>
+          {hasSubs && (
+            <div className="rp-subrow">
+              {([["Communication", report.communication], ["Technical", report.technical], ["Clarity", report.clarity], ["Relevance", report.relevance]] as [string, number][]).map(([label, val]) => (
+                <div className="rp-subchip" key={label}>
+                  <span className="v" style={{ color: scoreColor(val) }}>{val}</span>
+                  <span className="l">{label}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="rp-bigring" style={{ maxWidth: 220, margin: "0 auto 18px" }}>
-          <div className="rp-ring" style={{ ["--v" as string]: report.overallScore ?? 0, ["--ring" as string]: scoreColor(report.overallScore) } as CSSProperties}><b>{report.overallScore ?? "—"}</b></div>
-          <span className="tag">{tagFor(report.overallScore)}</span>
-        </div>
-      )}
+      </div>
 
       {report.summary && (
-        <div className="rp-box" style={{ marginBottom: 18 }}>
-          <h4>💬 Coach&apos;s note</h4>
-          <p style={{ margin: 0, fontSize: 14, color: "var(--muted)" }}>{report.summary}</p>
+        <div className="rp-note">
+          <div className="rp-note-orb" />
+          <div>
+            <h4>Coach&apos;s note</h4>
+            <p>{report.summary}</p>
+          </div>
         </div>
       )}
 
       <div className="rp-two">
-        <div className="rp-box"><h4>✅ What went well</h4><ul style={{ margin: 0, paddingLeft: 16 }}>{(strengths.length ? strengths : ["You showed up and practised — that's the hardest part"]).map((s) => <li key={s}>{s}</li>)}</ul></div>
-        <div className="rp-box"><h4>🎯 Focus next</h4><ul style={{ margin: 0, paddingLeft: 16 }}><li>{focus}</li><li>Quantify your impact (numbers, outcomes)</li><li>Retry to lock in the improvement</li></ul></div>
+        <div className="rp-card good">
+          <div className="rp-card-h"><span className="ic">✓</span> What went well</div>
+          <ul>{(strengths.length ? strengths : ["You showed up and practised — that's the hardest part"]).map((s) => <li key={s}>{s}</li>)}</ul>
+        </div>
+        <div className="rp-card focus">
+          <div className="rp-card-h"><span className="ic">◎</span> Focus next</div>
+          <ul><li>{focus}</li><li>Quantify your impact (numbers, outcomes)</li><li>Retry to lock in the improvement</li></ul>
+        </div>
       </div>
 
       <h3 className="rp-qs-title">Question by question</h3>
@@ -143,6 +175,8 @@ export function ReportView({ report }: { report: Report }) {
         <Link href="/mock/new" className="btn">🔁 Another mock</Link>
         <Link href="/reports" className="btn o">Back to reports</Link>
       </div>
+
+      {toast && <div className="rp-toast">{toast}</div>}
     </div>
   );
 }
