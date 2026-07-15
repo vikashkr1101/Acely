@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -6,23 +6,22 @@ import Link from "next/link";
 import { api, getToken, type InterviewDto } from "@/lib/api";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { speak, stopSpeaking, computeDelivery } from "@/lib/speech";
-import { AppShell } from "@/components/layout/AppShell";
 
 const TIPS = [
   "Structure it: the situation, what you did, and the result.",
-  "Lead with your strongest point â€” you can add detail after.",
+  "Lead with your strongest point — you can add detail after.",
   "It's fine to pause and think. Take your time.",
-  "Use a real example â€” specifics beat theory.",
-  "Say the outcome out loud â€” what changed because of you?",
+  "Use a real example — specifics beat theory.",
+  "Say the outcome out loud — what changed because of you?",
   "Keep it to a minute or two, then stop. Concise is confident.",
 ];
 
 function faceFor(v: number) {
-  if (v <= 2) return "ðŸ˜Œ";
-  if (v <= 4) return "ðŸ™‚";
-  if (v <= 6) return "ðŸ˜";
-  if (v <= 8) return "ðŸ˜Ÿ";
-  return "ðŸ˜°";
+  if (v <= 2) return "😌";
+  if (v <= 4) return "🙂";
+  if (v <= 6) return "😐";
+  if (v <= 8) return "😟";
+  return "😰";
 }
 
 export default function MockPage({ params }: { params: Promise<{ id: string }> }) {
@@ -79,43 +78,43 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
     return (
       <div className="iv">
         <div className="loader" style={{ minHeight: "100vh", color: "#b6b0e0" }}>
-          {error ? <span className="loader-label">{error}</span> : (<><span className="loader-spin" /><span className="loader-label">Loadingâ€¦</span></>)}
+          {error ? <span className="loader-label">{error}</span> : (<><span className="loader-spin" /><span className="loader-label">Loading…</span></>)}
         </div>
       </div>
     );
   }
 
-  // â”€â”€ Calm entry (breathe + nerve check-in) â”€â”€
+  // Calm entry (breathe + nerve check-in)
   if (needNerves) {
     return (
       <div className="iv">
-        <div className="iv-top"><Link href="/dashboard" className="iv-exit">â† Exit</Link><div className="iv-brand"><span className="mk">P</span>PrepPal</div><span /></div>
+        <div className="iv-top"><Link href="/dashboard" className="iv-exit">← Exit</Link><div className="iv-brand"><span className="mk">P</span>PrepPal</div><span /></div>
         <div className="iv-ready">
-          <div className="iv-breathe">breathe<br />inâ€¦ outâ€¦</div>
-          <h2>Take a breath. This is just practice. ðŸŒ±</h2>
-          <p className="say">No one&apos;s watching, nothing is recorded. Pause or stop anytime â€” and retry as often as you like.</p>
+          <div className="iv-breathe">breathe<br />in… out…</div>
+          <h2>Take a breath. This is just practice. 🌱</h2>
+          <p className="say">No one&apos;s watching, nothing is recorded. Pause or stop anytime — and retry as often as you like.</p>
           <div className="iv-chips">
             <div className="iv-chip"><b>{iv.questions.length} questions</b>~10 min</div>
             <div className="iv-chip"><b>Pause anytime</b>no rush</div>
             <div className="iv-chip"><b>Private</b>only you see this</div>
           </div>
-          <div className="iv-reframe">ðŸ’¡ <b>Feeling nervous?</b> That&apos;s normal â€” even good. Those nerves are energy. Use them. You&apos;ve got this.</div>
+          <div className="iv-reframe">💡 <b>Feeling nervous?</b> That&apos;s normal — even good. Those nerves are energy. Use them. You&apos;ve got this.</div>
           <div style={{ marginTop: 6, marginBottom: 2, color: "#b6b0e0", fontSize: 14 }}>How nervous do you feel right now?</div>
           <div className="iv-face">{faceFor(nerveVal)}</div>
           <input className="iv-range" type="range" min={1} max={10} value={nerveVal} onChange={(e) => setNerveVal(Number(e.target.value))} />
-          <div className="iv-scale"><span>ðŸ˜Œ Calm</span><span>ðŸ˜° Very nervous</span></div>
+          <div className="iv-scale"><span>😌 Calm</span><span>😰 Very nervous</span></div>
           <button className="iv-start" disabled={busy} onClick={async () => {
             setBusy(true);
             try { await api.nerves(iv.id, "BEFORE", nerveVal); } catch { /* non-blocking */ }
             setBusy(false);
             setNeedNerves(false);
-          }}>{busy ? "One secâ€¦" : "Start when you're ready â†’"}</button>
+          }}>{busy ? "One sec…" : "Start when you're ready →"}</button>
         </div>
       </div>
     );
   }
 
-  // â”€â”€ Interview â”€â”€
+  // Interview
   const total = iv.questions.length;
   const isLast = idx === total - 1;
   const allAnswered = iv.questions.every((x) => x.answered);
@@ -162,11 +161,11 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
   return (
     <div className="iv">
       <div className="iv-top">
-        <Link href="/dashboard" className="iv-exit">â† Exit</Link>
+        <Link href="/dashboard" className="iv-exit">← Exit</Link>
         <div className="iv-brand"><span className="mk">P</span>PrepPal</div>
         <div className="iv-meta">
           <span className="iv-dots">{iv.questions.map((_, i) => <i key={i} className={i < idx ? "on" : i === idx ? "cur" : ""} />)}</span>
-          <span className="iv-pill">{isVoice ? "ðŸŽ¤ Voice" : "âŒ¨ï¸ Text"} Â· Q{idx + 1} of {total}</span>
+          <span className="iv-pill">{isVoice ? "🎤 Voice" : "⌨️ Text"} · Q{idx + 1} of {total}</span>
         </div>
       </div>
 
@@ -176,7 +175,7 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
           <div className="iv-who">Your AI coach</div>
           <div className="iv-state">
             {isVoice
-              ? (voice.listening ? <><span className="d" /> Listening â€” take your time</> : "Tap the mic when you're ready")
+              ? (voice.listening ? <><span className="d" /> Listening — take your time</> : "Tap the mic when you're ready")
               : "Read the question, then type your answer"}
           </div>
           {isVoice && voice.listening && <div className="iv-wave">{Array.from({ length: 9 }).map((_, i) => <i key={i} />)}</div>}
@@ -185,38 +184,38 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
         <div className="iv-answer">
           <div className="iv-qlabel">Question {idx + 1}</div>
           <div className="iv-q">{q?.text}</div>
-          {isVoice && !answered && <button className="iv-replay" onClick={() => q && speak(q.text)}>ðŸ”Š Replay question</button>}
+          {isVoice && !answered && <button className="iv-replay" onClick={() => q && speak(q.text)}>🔊 Replay question</button>}
 
           {!answered ? (
             isVoice ? (
               <>
                 <div className="iv-transcript">
-                  <div className="iv-tlabel">{voice.listening ? "Your answer, live" : "Your answer â€” fix any mis-heard words âœï¸"}</div>
+                  <div className="iv-tlabel">{voice.listening ? "Your answer, live" : "Your answer — fix any mis-heard words ✏️"}</div>
                   {voice.listening ? (
-                    <p>{voice.transcript || "Listeningâ€¦"}<span className="iv-caret" /></p>
+                    <p>{voice.transcript || "Listening…"}<span className="iv-caret" /></p>
                   ) : edited ? (
                     <textarea className="iv-textarea" value={edited} onChange={(e) => setEdited(e.target.value)} rows={4} />
                   ) : (
                     <p style={{ color: "var(--faint)" }}>Tap the mic and start speaking.</p>
                   )}
                 </div>
-                {!voice.supported && <p className="iv-err">Voice isn&apos;t supported here â€” please use Chrome, or start a text mock.</p>}
-                <div className="iv-tip">ðŸ’¡ <span>{tip}</span></div>
+                {!voice.supported && <p className="iv-err">Voice isn&apos;t supported here — please use Chrome, or start a text mock.</p>}
+                <div className="iv-tip">💡 <span>{tip}</span></div>
                 <div className="iv-controls">
-                  <button className={`iv-mic${voice.listening ? " live" : ""}`} onClick={voice.listening ? voice.stop : voice.start} aria-label={voice.listening ? "Stop" : "Speak"}>{voice.listening ? "â– " : "ðŸŽ¤"}</button>
-                  <span className="iv-hint">{voice.listening ? "Recording â€” tap to pause" : "Tap to speak"}</span>
-                  <button className="iv-submit" onClick={submitVoice} disabled={busy || !(edited || voice.transcript).trim()}>{busy ? "Scoringâ€¦" : "Submit answer â†’"}</button>
+                  <button className={`iv-mic${voice.listening ? " live" : ""}`} onClick={voice.listening ? voice.stop : voice.start} aria-label={voice.listening ? "Stop" : "Speak"}>{voice.listening ? "■" : "🎤"}</button>
+                  <span className="iv-hint">{voice.listening ? "Recording — tap to pause" : "Tap to speak"}</span>
+                  <button className="iv-submit" onClick={submitVoice} disabled={busy || !(edited || voice.transcript).trim()}>{busy ? "Scoring…" : "Submit answer →"}</button>
                 </div>
               </>
             ) : (
               <>
                 <div className="iv-transcript">
                   <div className="iv-tlabel">Your answer</div>
-                  <textarea className="iv-textarea" value={text} onChange={(e) => setText(e.target.value)} placeholder="Type your answerâ€¦ take your time." rows={4} />
+                  <textarea className="iv-textarea" value={text} onChange={(e) => setText(e.target.value)} placeholder="Type your answer… take your time." rows={4} />
                 </div>
-                <div className="iv-tip">ðŸ’¡ <span>{tip}</span></div>
+                <div className="iv-tip">💡 <span>{tip}</span></div>
                 <div className="iv-controls">
-                  <button className="iv-submit" style={{ marginLeft: 0 }} onClick={() => submit(text)} disabled={busy || !text.trim()}>{busy ? "Scoringâ€¦" : "Submit answer â†’"}</button>
+                  <button className="iv-submit" style={{ marginLeft: 0 }} onClick={() => submit(text)} disabled={busy || !text.trim()}>{busy ? "Scoring…" : "Submit answer →"}</button>
                 </div>
               </>
             )
@@ -227,8 +226,8 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
               {q?.modelAnswer && <details><summary>See a strong example answer</summary><p>{q.modelAnswer}</p></details>}
               <div className="iv-controls">
                 {!isLast
-                  ? <button className="iv-submit" style={{ marginLeft: 0 }} onClick={next}>Next question â†’</button>
-                  : <button className="iv-submit" style={{ marginLeft: 0 }} onClick={finish} disabled={busy || !allAnswered}>{busy ? "Finishingâ€¦" : "See my results ðŸŽ¯"}</button>}
+                  ? <button className="iv-submit" style={{ marginLeft: 0 }} onClick={next}>Next question →</button>
+                  : <button className="iv-submit" style={{ marginLeft: 0 }} onClick={finish} disabled={busy || !allAnswered}>{busy ? "Finishing…" : "See my results 🎯"}</button>}
               </div>
             </div>
           )}
