@@ -2,6 +2,7 @@ package com.preppal.interview.dto;
 
 import com.preppal.interview.InterviewMode;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -17,5 +18,6 @@ public record ReportDto(
         int relevance,
         Integer nervesBefore,
         Integer nervesAfter,
+        Instant createdAt,
         List<QuestionDto> questions) {
 }

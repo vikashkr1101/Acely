@@ -142,7 +142,7 @@ public class InterviewService {
         return new ReportDto(s.getId(), s.getRole(), s.getMode(), s.getOverallScore(), s.getSummary(),
                 metricAvg(ms, "communication"), metricAvg(ms, "technical_depth"),
                 metricAvg(ms, "clarity"), metricAvg(ms, "relevance"),
-                nerve(ms, MetricPhase.BEFORE), nerve(ms, MetricPhase.AFTER),
+                nerve(ms, MetricPhase.BEFORE), nerve(ms, MetricPhase.AFTER), s.getCreatedAt(),
                 s.getQuestions().stream().map(QuestionDto::from).toList());
     }
 

@@ -73,6 +73,7 @@ export interface Report {
   relevance: number;
   nervesBefore: number | null;
   nervesAfter: number | null;
+  createdAt: string;
   questions: QuestionDto[];
 }
 export interface Dashboard {

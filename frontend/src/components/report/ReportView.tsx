@@ -29,6 +29,10 @@ function scoreColor(v: number | null) {
   if (v >= 55) return "#f59e0b";
   return "#ef4455";
 }
+function fmtDate(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}
 
 export function ReportView({ report }: { report: Report }) {
   const [afterDone, setAfterDone] = useState(false);
@@ -50,6 +54,14 @@ export function ReportView({ report }: { report: Report }) {
 
   return (
     <div className="rp">
+      <div className="rp-print-head">
+        <div className="pph-brand"><span className="mk">P</span> PrepPal</div>
+        <div className="pph-r">
+          <div className="pph-title">Mock Interview Report</div>
+          <div className="pph-meta">{report.role} · {report.mode === "VOICE" ? "Voice" : "Text"} · {fmtDate(report.createdAt)}</div>
+        </div>
+      </div>
+
       {showAfter && (
         <div className="rp-box" style={{ textAlign: "center", margin: "16px 0" }}>
           <h4 style={{ justifyContent: "center", fontSize: 16 }}>You did it! How do you feel now? 😌</h4>
@@ -68,7 +80,7 @@ export function ReportView({ report }: { report: Report }) {
       <div className="rp-head">
         <div>
           <h1>Your mock report 🎯</h1>
-          <div className="sub">{report.role} · {report.mode === "VOICE" ? "Voice" : "Text"} · {report.questions.length} questions</div>
+          <div className="sub">{report.role} · {report.mode === "VOICE" ? "Voice" : "Text"} · {report.questions.length} questions · {fmtDate(report.createdAt)}</div>
         </div>
         <button className="rp-dl" onClick={() => window.print()}>⬇ Download PDF</button>
       </div>

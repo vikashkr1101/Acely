@@ -1231,7 +1231,7 @@ h4 {
 }
 .app-inner {
   width: 100%;
-  max-width: 1000px;
+  max-width: 1120px;
 }
 @media (max-width: 760px) {
   .app-shell {
@@ -1554,6 +1554,33 @@ h4 {
 @media (max-width: 560px) {
   .rpl-tags .rpl-skill { display: none; }
   .rpl-stats { grid-template-columns: 1fr; }
+}
+
+/* ── print / PDF report ── */
+.rp-print-head { display: none; }
+@media print {
+  @page { margin: 15mm 14mm; }
+  body { background: #fff; }
+  .sidebar, .nav { display: none !important; }
+  .app-shell { display: block; background: #fff; }
+  .app-main { padding: 0 !important; display: block; }
+  .app-inner { max-width: 100% !important; }
+  .rp { max-width: 100%; padding: 0; }
+  .rp, .rp * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .rp-dl, .rp-actions, .rp-back { display: none !important; }
+  .rp .btn, .rp input[type="range"] { display: none !important; }
+  .rp-print-head {
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 2px solid var(--ink); padding-bottom: 12px; margin-bottom: 20px;
+  }
+  .rp-print-head .pph-brand { display: flex; align-items: center; gap: 9px; font-weight: 900; font-size: 19px; }
+  .rp-print-head .pph-brand .mk { width: 28px; height: 28px; border-radius: 8px; background: var(--grad); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; }
+  .rp-print-head .pph-r { text-align: right; }
+  .rp-print-head .pph-title { font-weight: 800; font-size: 13px; }
+  .rp-print-head .pph-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .rp-head h1 { font-size: 22px; }
+  .rp-head, .rp-nerve, .rp-hero, .rp-sub, .rp-box, .rp-q { break-inside: avoid; }
+  .rp-qs-title { break-after: avoid; }
 }
 
 @media (prefers-reduced-motion: reduce) {
