@@ -25,6 +25,9 @@ export interface AuthResponse {
   user: User;
 }
 
+export type InterviewType = "HR" | "TECHNICAL" | "BEHAVIORAL" | "PROJECT";
+export type ExperienceLevel = "FRESHER" | "ZERO_ONE" | "ONE_THREE" | "THREE_PLUS";
+
 export interface QuestionDto {
   id: string;
   ordinal: number;
@@ -114,7 +117,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     let message = "Something went wrong. Please try again.";
     try {
       const body = await res.json();
-      if (body?.error) message = body.error;
+      // Spring puts our thrown message in `message`; our own APIs may use `error`.
+      if (body?.message) message = body.message;
+      else if (body?.error) message = body.error;
     } catch {
       /* non-JSON error */
     }
@@ -150,10 +155,17 @@ export const api = {
       body: JSON.stringify({ phase, nervousness }),
     }),
 
-  createInterview: (role: string, jd: string, count: number, mode: "TEXT" | "VOICE" = "TEXT") =>
+  createInterview: (opts: {
+    role: string;
+    jd: string;
+    count: number;
+    mode?: "TEXT" | "VOICE";
+    interviewType?: InterviewType;
+    experienceLevel?: ExperienceLevel;
+  }) =>
     request<InterviewDto>("/api/interviews", {
       method: "POST",
-      body: JSON.stringify({ role, jd, count, mode }),
+      body: JSON.stringify(opts),
     }),
 
   getInterview: (id: string) => request<InterviewDto>(`/api/interviews/${id}`),

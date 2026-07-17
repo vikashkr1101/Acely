@@ -47,9 +47,11 @@ public class AiService {
         return ordered;
     }
 
-    public List<GeneratedQuestion> generateQuestions(UUID userId, UUID sessionId, String role, String jd, int count) {
+    public List<GeneratedQuestion> generateQuestions(UUID userId, UUID sessionId, String role, String jd, int count,
+                                                     com.preppal.interview.InterviewType type,
+                                                     com.preppal.interview.ExperienceLevel level) {
         return withFailover(AiOperation.GENERATE_QUESTIONS, userId, sessionId,
-                c -> c.generateQuestions(role, jd, count),
+                c -> c.generateQuestions(role, jd, count, type, level),
                 () -> bank.forRole(role, count));
     }
 
@@ -75,6 +77,8 @@ public class AiService {
                 T result = call.run(client);
                 record(client.provider(), op, userId, sessionId, true, priorFailure, t0, null);
                 return result;
+            } catch (com.preppal.common.InvalidInputException e) {
+                throw e; // a user-input problem (e.g. gibberish role) — don't retry or fall back
             } catch (Exception e) {
                 log.warn("AI provider {} failed for {}: {}", client.provider(), op, e.getMessage());
                 record(client.provider(), op, userId, sessionId, false, priorFailure, t0, e.getMessage());

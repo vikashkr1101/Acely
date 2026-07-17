@@ -55,7 +55,8 @@ public class InterviewService {
         sessions.save(session); // assign id + createdAt before generating
 
         List<GeneratedQuestion> generated = ai.generateQuestions(
-                user.getId(), session.getId(), session.getRole(), session.getJd(), req.countOrDefault());
+                user.getId(), session.getId(), session.getRole(), session.getJd(), req.countOrDefault(),
+                session.getInterviewType(), session.getExperienceLevel());
 
         int ordinal = 1;
         for (GeneratedQuestion g : generated) {

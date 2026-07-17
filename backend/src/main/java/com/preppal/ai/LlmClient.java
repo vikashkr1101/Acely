@@ -2,6 +2,7 @@ package com.preppal.ai;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.preppal.common.InvalidInputException;
 import com.preppal.interview.ExperienceLevel;
 import com.preppal.interview.InterviewType;
 
@@ -26,19 +27,28 @@ public abstract class LlmClient {
     /** Send a prompt to the provider and return the raw model text (expected to be JSON). */
     protected abstract String complete(String systemPrompt, String userPrompt, double temperature) throws Exception;
 
-    // ── Question generation ────────────────────────────────────────────────
-    public List<GeneratedQuestion> generateQuestions(String role, String jd, int count) throws Exception {
+    // ── Question generation (type-aware + level-aware) ─────────────────────
+    public List<GeneratedQuestion> generateQuestions(String role, String jd, int count,
+                                                     InterviewType type, ExperienceLevel level) throws Exception {
+        InterviewType t = type == null ? InterviewType.TECHNICAL : type;
+        String levelLabel = (level == null ? ExperienceLevel.FRESHER : level).label();
         String system = """
-                You are an expert, friendly interviewer helping a student prepare for a "%s" interview.
-                Generate exactly %d realistic interview questions tailored to the role (and the job
-                description if given). Mix behavioural and technical questions, ordered easiest-first to
-                build confidence. Keep each question to one or two sentences.
-                Respond with ONLY valid JSON in exactly this shape:
+                You are an expert, friendly interviewer running a %s interview for a "%s" role.
+                The candidate is %s — calibrate difficulty and expectations to that level.
+                %s
+                Generate exactly %d realistic questions of this kind, ordered easiest-first to build
+                confidence. Keep each to one or two sentences and stay within the interview type above.
+                If the role above is NOT a recognisable job title (e.g. random letters or gibberish),
+                respond ONLY with {"invalid_role":true} and no questions.
+                Otherwise respond with ONLY valid JSON in exactly this shape:
                 {"questions":[{"text":"..."}]}
-                """.formatted(role, count);
-        String user = "Role: " + role + "\nJob description: " + (jd == null || jd.isBlank() ? "not provided" : jd);
+                """.formatted(kindLabel(t), role, levelLabel, typeGuidance(t), count);
+        String user = "Role: " + role + "\nContext / job description: " + (jd == null || jd.isBlank() ? "not provided" : jd);
 
         JsonNode root = MAPPER.readTree(extractJson(complete(system, user, 0.7)));
+        if (root.path("invalid_role").asBoolean(false)) {
+            throw new InvalidInputException("That doesn't look like a real role — try something like \"Frontend Developer\".");
+        }
         List<GeneratedQuestion> questions = new ArrayList<>();
         for (JsonNode q : root.path("questions")) {
             String text = q.path("text").asText(null);
@@ -46,6 +56,24 @@ public abstract class LlmClient {
         }
         if (questions.isEmpty()) throw new IllegalStateException("No questions parsed from response");
         return questions;
+    }
+
+    private static String kindLabel(InterviewType t) {
+        return switch (t) {
+            case TECHNICAL -> "technical";
+            case BEHAVIORAL -> "behavioural";
+            case HR -> "HR / motivation";
+            case PROJECT -> "project-based";
+        };
+    }
+
+    private static String typeGuidance(InterviewType t) {
+        return switch (t) {
+            case TECHNICAL -> "Ask technical questions: core fundamentals, problem-solving, and 'how would you approach' questions relevant to the role. Do NOT ask HR or behavioural questions.";
+            case BEHAVIORAL -> "Ask behavioural questions that invite STAR-style stories (a real situation, the actions they took, the result) about teamwork, conflict, ownership, and learning.";
+            case HR -> "Ask HR / motivation questions: tell me about yourself, strengths and weaknesses, why this role and company, career goals, and situational fit.";
+            case PROJECT -> "Ask questions about the candidate's OWN projects and experience (use the job description/context if given): their specific role, the technical decisions and why, challenges they solved, and the impact.";
+        };
     }
 
     // ── Answer evaluation (rubric-driven, one call) ─────────────────────────
