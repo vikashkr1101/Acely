@@ -29,19 +29,21 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   }, [id, router]);
 
   return (
-    <AppShell>
-      {loading ? (
-        <Loader label="Loading your report…" />
-      ) : error || !report ? (
-        <div className="rpl-empty">
-          <div className="em">🔌</div>
-          <h3>Report unavailable</h3>
-          <p>{error || "This report doesn't exist yet."}</p>
-          <Link href="/reports" className="btn" style={{ marginTop: 16 }}>← Back to reports</Link>
-        </div>
-      ) : (
-        <ReportView report={report} userName={userName} />
-      )}
+    <AppShell bleed>
+      <div className="rpv-stage">
+        {loading ? (
+          <Loader label="Loading your report…" />
+        ) : error || !report ? (
+          <div className="rpl-empty">
+            <div className="em">🔌</div>
+            <h3>Report unavailable</h3>
+            <p>{error || "This report doesn't exist yet."}</p>
+            <Link href="/reports" className="btn" style={{ marginTop: 16 }}>← Back to reports</Link>
+          </div>
+        ) : (
+          <ReportView report={report} userName={userName} />
+        )}
+      </div>
     </AppShell>
   );
 }

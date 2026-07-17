@@ -12,7 +12,7 @@ const NAV = [
   { href: "/reports", label: "Reports", Icon: FiBarChart2, match: (p: string) => p.startsWith("/reports") },
 ];
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ children, bleed = false }: { children: ReactNode; bleed?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -66,8 +66,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <main className="app-main">
-        <div className="app-inner">{children}</div>
+      <main className={`app-main${bleed ? " bleed" : ""}`}>
+        {bleed ? children : <div className="app-inner">{children}</div>}
       </main>
     </div>
   );
