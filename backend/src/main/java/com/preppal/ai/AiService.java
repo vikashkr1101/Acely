@@ -26,14 +26,19 @@ public class AiService {
     private final StaticQuestionBank bank;
     private final AiUsageRepository usageRepo;
 
-    /** Failover order, e.g. "ZHIPU,GEMINI,GROQ" — overridable via AI_FAILOVER. */
+    /** Default failover order (generation, etc.) — overridable via AI_FAILOVER. */
     @Value("${preppal.ai.failover:ZHIPU,GEMINI,GROQ}")
     private List<String> failoverOrder;
 
-    /** Configured LLM providers, in the order given by preppal.ai.failover. */
-    private List<LlmClient> clients() {
+    /** Scoring failover order — Gemini first (more consistent technical judging). */
+    @Value("${preppal.ai.failover-score:GEMINI,ZHIPU,GROQ}")
+    private List<String> scoreOrder;
+
+    /** Configured LLM providers, ordered by the per-operation failover config. */
+    private List<LlmClient> clients(AiOperation op) {
+        List<String> order = (op == AiOperation.SCORE_ANSWER) ? scoreOrder : failoverOrder;
         List<LlmClient> ordered = new ArrayList<>();
-        for (String name : failoverOrder) {
+        for (String name : order) {
             providers.stream()
                     .filter(c -> c.provider().name().equalsIgnoreCase(name.trim()) && c.isConfigured())
                     .findFirst()
@@ -48,9 +53,11 @@ public class AiService {
                 () -> bank.forRole(role, count));
     }
 
-    public AnswerScore scoreAnswer(UUID userId, UUID sessionId, String question, String answer) {
+    public AnswerScore scoreAnswer(UUID userId, UUID sessionId, String question, String answer,
+                                   com.preppal.interview.InterviewType type,
+                                   com.preppal.interview.ExperienceLevel level, Rubric rubric) {
         return withFailover(AiOperation.SCORE_ANSWER, userId, sessionId,
-                c -> c.scoreAnswer(question, answer),
+                c -> c.evaluateAnswer(question, answer, type, level, rubric),
                 AnswerScore::fallback);
     }
 
@@ -62,7 +69,7 @@ public class AiService {
 
     private <T> T withFailover(AiOperation op, UUID userId, UUID sessionId, AiCall<T> call, Supplier<T> staticFallback) {
         boolean priorFailure = false;
-        for (LlmClient client : clients()) {
+        for (LlmClient client : clients(op)) {
             long t0 = System.currentTimeMillis();
             try {
                 T result = call.run(client);

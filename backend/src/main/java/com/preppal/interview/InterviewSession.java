@@ -43,6 +43,22 @@ public class InterviewSession {
     @Column(columnDefinition = "text")
     private String summary;
 
+    // ── engine fields (Phase 1; nullable so legacy sessions stay valid) ──
+    @Enumerated(EnumType.STRING)
+    @Column(name = "interview_type")
+    private InterviewType interviewType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "experience_level")
+    private ExperienceLevel experienceLevel;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "entry_mode")
+    private EntryMode entryMode;
+
+    @Column(name = "prompt_version")
+    private String promptVersion;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 

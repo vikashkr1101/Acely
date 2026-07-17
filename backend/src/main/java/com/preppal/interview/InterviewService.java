@@ -3,6 +3,8 @@ package com.preppal.interview;
 import com.preppal.ai.AiService;
 import com.preppal.ai.AnswerScore;
 import com.preppal.ai.GeneratedQuestion;
+import com.preppal.ai.Rubric;
+import com.preppal.ai.RubricService;
 import com.preppal.interview.dto.*;
 import com.preppal.metric.MetricPhase;
 import com.preppal.metric.SessionMetric;
@@ -33,6 +35,7 @@ public class InterviewService {
     private final QuestionRepository questions;
     private final SessionMetricRepository metrics;
     private final AiService ai;
+    private final RubricService rubrics;
 
     @Value("${preppal.free.monthly-mocks}")
     private int freeMonthlyMocks;
@@ -44,6 +47,9 @@ public class InterviewService {
 
         InterviewSession session = new InterviewSession(
                 user.getId(), req.role().trim(), req.jd(), req.modeOrDefault());
+        session.setInterviewType(req.typeOrDefault());
+        session.setExperienceLevel(req.levelOrDefault());
+        session.setPromptVersion("eval-v1");
         sessions.save(session); // assign id + createdAt before generating
 
         List<GeneratedQuestion> generated = ai.generateQuestions(
@@ -51,7 +57,9 @@ public class InterviewService {
 
         int ordinal = 1;
         for (GeneratedQuestion g : generated) {
-            session.addQuestion(new Question(ordinal++, g.text()));
+            Question q = new Question(ordinal++, g.text());
+            q.setQuestionType(session.getInterviewType()); // Phase 1: uniform type per mock
+            session.addQuestion(q);
         }
         sessions.save(session);
         return InterviewDto.from(session);
@@ -78,11 +86,15 @@ public class InterviewService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your interview");
         }
 
-        AnswerScore score = ai.scoreAnswer(user.getId(), session.getId(), q.getQuestionText(), req.transcript());
+        Rubric rubric = rubrics.forType(session.getInterviewType());
+        AnswerScore score = ai.scoreAnswer(user.getId(), session.getId(), q.getQuestionText(), req.transcript(),
+                session.getInterviewType(), session.getExperienceLevel(), rubric);
         q.setAnswerTranscript(req.transcript());
         q.setFeedback(score.feedback());
         q.setModelAnswer(score.modelAnswer());
         q.setScore(score.overall());
+        q.setQuestionType(session.getInterviewType());
+        q.setRubricJson(score.rubricJson());
         questions.save(q);
 
         // Per-answer skill scores (feed the dashboard skill breakdown)

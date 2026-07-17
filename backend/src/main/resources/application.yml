@@ -33,8 +33,10 @@ preppal:
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
   ai:
-    # Provider failover order (first configured one wins, then falls through).
+    # Default failover order (question generation etc.) — first configured wins, then falls through.
     failover: ${AI_FAILOVER:ZHIPU,GEMINI,GROQ}
+    # Scoring uses Gemini first (more consistent technical judging); Zhipu/Groq behind it.
+    failover-score: ${AI_FAILOVER_SCORE:GEMINI,ZHIPU,GROQ}
   zhipu:
     api-key: ${ZHIPU_API_KEY:}
     model: ${ZHIPU_MODEL:glm-4.5-flash}
