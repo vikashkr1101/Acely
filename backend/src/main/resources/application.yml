@@ -32,6 +32,13 @@ preppal:
     expiration-ms: ${JWT_EXPIRATION_MS:604800000}
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
+  ai:
+    # Provider failover order (first configured one wins, then falls through).
+    failover: ${AI_FAILOVER:ZHIPU,GEMINI,GROQ}
+  zhipu:
+    api-key: ${ZHIPU_API_KEY:}
+    model: ${ZHIPU_MODEL:glm-4.5-flash}
+    base-url: ${ZHIPU_BASE_URL:https://api.z.ai/api/paas/v4}
   gemini:
     api-key: ${GEMINI_API_KEY:}
     model: ${GEMINI_MODEL:gemini-2.0-flash-lite}

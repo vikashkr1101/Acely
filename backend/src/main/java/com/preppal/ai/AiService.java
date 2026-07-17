@@ -2,30 +2,44 @@ package com.preppal.ai;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
  * The reliability layer: runs each AI operation through a provider failover chain
- * (Gemini → Groq → static fallback) and records every attempt in ai_usage.
- * Callers get a result no matter what — the app never breaks on a rate limit.
+ * (order from preppal.ai.failover, e.g. Zhipu → Gemini → Groq → static fallback)
+ * and records every attempt in ai_usage. Callers get a result no matter what —
+ * the app never breaks on a rate limit.
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AiService {
 
-    private final GeminiClient gemini;
-    private final GroqClient groq;
+    /** All LlmClient beans (Zhipu, Gemini, Groq); ordered at call time by config. */
+    private final List<LlmClient> providers;
     private final StaticQuestionBank bank;
     private final AiUsageRepository usageRepo;
 
-    /** Configured LLM providers, in priority order. */
+    /** Failover order, e.g. "ZHIPU,GEMINI,GROQ" — overridable via AI_FAILOVER. */
+    @Value("${preppal.ai.failover:ZHIPU,GEMINI,GROQ}")
+    private List<String> failoverOrder;
+
+    /** Configured LLM providers, in the order given by preppal.ai.failover. */
     private List<LlmClient> clients() {
-        return List.of(gemini, groq).stream().filter(LlmClient::isConfigured).toList();
+        List<LlmClient> ordered = new ArrayList<>();
+        for (String name : failoverOrder) {
+            providers.stream()
+                    .filter(c -> c.provider().name().equalsIgnoreCase(name.trim()) && c.isConfigured())
+                    .findFirst()
+                    .ifPresent(ordered::add);
+        }
+        return ordered;
     }
 
     public List<GeneratedQuestion> generateQuestions(UUID userId, UUID sessionId, String role, String jd, int count) {
