@@ -36,6 +36,7 @@ public class InterviewService {
     private final SessionMetricRepository metrics;
     private final AiService ai;
     private final RubricService rubrics;
+    private final AnswerAttemptRepository attempts;
 
     @Value("${preppal.free.monthly-mocks}")
     private int freeMonthlyMocks;
@@ -49,6 +50,7 @@ public class InterviewService {
                 user.getId(), req.role().trim(), req.jd(), req.modeOrDefault());
         session.setInterviewType(req.typeOrDefault());
         session.setExperienceLevel(req.levelOrDefault());
+        session.setScoringMode(req.scoringModeOrDefault());
         session.setPromptVersion("eval-v1");
         sessions.save(session); // assign id + createdAt before generating
 
@@ -76,20 +78,51 @@ public class InterviewService {
                 .stream().map(InterviewDto::from).toList();
     }
 
-    // ── Answer a question: score it via the AI failover chain ───────────────
+    // ── Answer a question ───────────────────────────────────────────────────
+    // Practice mode: score it now. Interview mode: just store it (scored at complete()).
     @Transactional
     public AnswerFeedbackDto answer(User user, AnswerRequest req) {
-        Question q = questions.findById(req.questionId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Question not found"));
+        Question q = ownedQuestion(user, req.questionId());
         InterviewSession session = q.getSession();
-        if (!session.getUserId().equals(user.getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your interview");
+
+        if (session.getScoringMode() == ScoringMode.INTERVIEW) {
+            q.setAnswerTranscript(req.transcript());
+            q.setQuestionType(session.getInterviewType());
+            questions.save(q);
+            return AnswerFeedbackDto.pending(q.getId());
         }
 
+        AnswerScore score = evaluateAndStore(user, session, q, req.transcript(),
+                req.paceWpm(), req.fillerWords(), req.speechClarity());
+        return AnswerFeedbackDto.from(q.getId(), score);
+    }
+
+    // ── Retry a question: re-answer, re-evaluate, keep the attempt history ──
+    @Transactional
+    public AnswerFeedbackDto retry(User user, AnswerRequest req) {
+        Question q = ownedQuestion(user, req.questionId());
+        AnswerScore score = evaluateAndStore(user, q.getSession(), q, req.transcript(),
+                req.paceWpm(), req.fillerWords(), req.speechClarity());
+        return AnswerFeedbackDto.from(q.getId(), score);
+    }
+
+    /** Evaluate an answer, record the attempt, update the question, and (first attempt only) the metrics. */
+    private AnswerScore evaluateAndStore(User user, InterviewSession session, Question q, String transcript,
+                                         Integer paceWpm, Integer fillerWords, Integer speechClarity) {
         Rubric rubric = rubrics.forType(session.getInterviewType());
-        AnswerScore score = ai.scoreAnswer(user.getId(), session.getId(), q.getQuestionText(), req.transcript(),
+        AnswerScore score = ai.scoreAnswer(user.getId(), session.getId(), q.getQuestionText(), transcript,
                 session.getInterviewType(), session.getExperienceLevel(), rubric);
-        q.setAnswerTranscript(req.transcript());
+
+        int attemptNo = attempts.countByQuestionId(q.getId()) + 1;
+        AnswerAttempt attempt = new AnswerAttempt(q.getId(), attemptNo, transcript);
+        attempt.setScore(score.overall());
+        attempt.setRubricJson(score.rubricJson());
+        attempt.setFeedback(score.feedback());
+        attempt.setModelAnswer(score.modelAnswer());
+        attempts.save(attempt);
+
+        // Question reflects the LATEST attempt, so the report/DTO code stays unchanged.
+        q.setAnswerTranscript(transcript);
         q.setFeedback(score.feedback());
         q.setModelAnswer(score.modelAnswer());
         q.setScore(score.overall());
@@ -97,19 +130,19 @@ public class InterviewService {
         q.setRubricJson(score.rubricJson());
         questions.save(q);
 
-        // Per-answer skill scores (feed the dashboard skill breakdown)
-        UUID sid = session.getId();
-        saveMetric(sid, "communication", score.communication());
-        saveMetric(sid, "technical_depth", score.technicalDepth());
-        saveMetric(sid, "relevance", score.relevance());
-        saveMetric(sid, "clarity", score.clarity());
-
-        // Voice delivery metrics (optional)
-        if (req.paceWpm() != null) saveMetric(sid, "pace_wpm", req.paceWpm());
-        if (req.fillerWords() != null) saveMetric(sid, "filler_words", req.fillerWords());
-        if (req.speechClarity() != null) saveMetric(sid, "speech_clarity", req.speechClarity());
-
-        return AnswerFeedbackDto.from(q.getId(), score);
+        // Only the FIRST attempt feeds the dashboard competency history (retries update the shown
+        // score, not the averaged bars — refined in Phase 1.6 analytics).
+        if (attemptNo == 1) {
+            UUID sid = session.getId();
+            saveMetric(sid, "communication", score.communication());
+            saveMetric(sid, "technical_depth", score.technicalDepth());
+            saveMetric(sid, "relevance", score.relevance());
+            saveMetric(sid, "clarity", score.clarity());
+            if (paceWpm != null) saveMetric(sid, "pace_wpm", paceWpm);
+            if (fillerWords != null) saveMetric(sid, "filler_words", fillerWords);
+            if (speechClarity != null) saveMetric(sid, "speech_clarity", speechClarity);
+        }
+        return score;
     }
 
     // ── Record the nervousness check-in (before / after) ────────────────────
@@ -124,6 +157,17 @@ public class InterviewService {
     @Transactional
     public InterviewDto complete(User user, UUID sessionId) {
         InterviewSession session = ownedSession(user, sessionId);
+
+        // Interview mode: answers were stored but not scored — score them now (sequential;
+        // provider failover absorbs Gemini rate limits). Only answered, unscored questions.
+        if (session.getScoringMode() == ScoringMode.INTERVIEW) {
+            for (Question q : session.getQuestions()) {
+                if (q.getScore() == null && q.getAnswerTranscript() != null && !q.getAnswerTranscript().isBlank()) {
+                    evaluateAndStore(user, session, q, q.getAnswerTranscript(), null, null, null);
+                }
+            }
+        }
+
         int[] scores = session.getQuestions().stream()
                 .map(Question::getScore).filter(s -> s != null).mapToInt(Integer::intValue).toArray();
         Integer overall = scores.length == 0 ? null
@@ -233,6 +277,15 @@ public class InterviewService {
     private InterviewSession ownedSession(User user, UUID sessionId) {
         return sessions.findByIdAndUserId(sessionId, user.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Interview not found"));
+    }
+
+    private Question ownedQuestion(User user, UUID questionId) {
+        Question q = questions.findById(questionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Question not found"));
+        if (!q.getSession().getUserId().equals(user.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your interview");
+        }
+        return q;
     }
 
     private String summaryFor(Integer overall) {

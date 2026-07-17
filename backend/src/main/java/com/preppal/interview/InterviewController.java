@@ -38,6 +38,12 @@ public class InterviewController {
         return interviews.answer(user, req);
     }
 
+    @PostMapping("/{id}/retry")
+    public AnswerFeedbackDto retry(@AuthenticationPrincipal User user, @PathVariable UUID id,
+                                   @Valid @RequestBody AnswerRequest req) {
+        return interviews.retry(user, req);
+    }
+
     @PostMapping("/{id}/nerves")
     public void nerves(@AuthenticationPrincipal User user, @PathVariable UUID id,
                        @Valid @RequestBody NervesRequest req) {

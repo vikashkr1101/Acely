@@ -56,6 +56,10 @@ public class InterviewSession {
     @Column(name = "entry_mode")
     private EntryMode entryMode;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "scoring_mode")
+    private ScoringMode scoringMode;
+
     @Column(name = "prompt_version")
     private String promptVersion;
 
