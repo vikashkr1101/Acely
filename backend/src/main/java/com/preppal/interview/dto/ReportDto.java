@@ -19,5 +19,8 @@ public record ReportDto(
         Integer nervesBefore,
         Integer nervesAfter,
         Instant createdAt,
+        List<String> strengths,
+        List<String> focus,
+        List<String> patterns,
         List<QuestionDto> questions) {
 }

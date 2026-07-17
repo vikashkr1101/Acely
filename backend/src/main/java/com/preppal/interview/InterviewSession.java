@@ -43,6 +43,10 @@ public class InterviewSession {
     @Column(columnDefinition = "text")
     private String summary;
 
+    /** Grounded whole-session debrief (coach note + strengths/focus/patterns) as JSON. */
+    @Column(name = "analysis_json", columnDefinition = "text")
+    private String analysisJson;
+
     // ── engine fields (Phase 1; nullable so legacy sessions stay valid) ──
     @Enumerated(EnumType.STRING)
     @Column(name = "interview_type")

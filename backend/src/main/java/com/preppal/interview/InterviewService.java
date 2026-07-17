@@ -1,10 +1,12 @@
 package com.preppal.interview;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.preppal.ai.AiService;
 import com.preppal.ai.AnswerScore;
 import com.preppal.ai.GeneratedQuestion;
 import com.preppal.ai.Rubric;
 import com.preppal.ai.RubricService;
+import com.preppal.ai.SessionAnalysis;
 import com.preppal.interview.dto.*;
 import com.preppal.metric.MetricPhase;
 import com.preppal.metric.SessionMetric;
@@ -40,6 +42,8 @@ public class InterviewService {
 
     @Value("${preppal.free.monthly-mocks}")
     private int freeMonthlyMocks;
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     // ── Create a mock: enforce quota, generate questions, persist ───────────
     @Transactional
@@ -175,7 +179,20 @@ public class InterviewService {
                 : Math.round((float) java.util.Arrays.stream(scores).average().orElse(0));
 
         session.setOverallScore(overall);
-        session.setSummary(summaryFor(overall));
+
+        // Grounded, instruction-driven debrief (real coach note + specifics) — computed once, here.
+        if (overall != null) {
+            SessionAnalysis analysis = ai.analyzeSession(user.getId(), sessionId, session.getRole(),
+                    session.getInterviewType(), session.getExperienceLevel(), perQuestionSummary(session), overall);
+            session.setSummary(analysis.coachNote() == null || analysis.coachNote().isBlank()
+                    ? summaryFor(overall) : analysis.coachNote());
+            try {
+                session.setAnalysisJson(MAPPER.writeValueAsString(analysis));
+            } catch (Exception ignored) { /* keep the coach note; skip the JSON */ }
+        } else {
+            session.setSummary(summaryFor(overall));
+        }
+
         session.setStatus(SessionStatus.COMPLETED);
         session.setCompletedAt(Instant.now());
         sessions.save(session);
@@ -196,10 +213,12 @@ public class InterviewService {
     public ReportDto report(User user, UUID sessionId) {
         InterviewSession s = ownedSession(user, sessionId);
         List<SessionMetric> ms = metrics.findBySessionId(sessionId);
+        SessionAnalysis a = parseAnalysis(s.getAnalysisJson());
         return new ReportDto(s.getId(), s.getRole(), s.getMode(), s.getOverallScore(), s.getSummary(),
                 metricAvg(ms, "communication"), metricAvg(ms, "technical_depth"),
                 metricAvg(ms, "clarity"), metricAvg(ms, "relevance"),
                 nerve(ms, MetricPhase.BEFORE), nerve(ms, MetricPhase.AFTER), s.getCreatedAt(),
+                a.strengths(), a.focus(), a.patterns(),
                 s.getQuestions().stream().map(QuestionDto::from).toList());
     }
 
@@ -287,6 +306,34 @@ public class InterviewService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your interview");
         }
         return q;
+    }
+
+    /** Compact per-question grounding fed to the session analyser. */
+    private String perQuestionSummary(InterviewSession session) {
+        StringBuilder sb = new StringBuilder();
+        for (Question q : session.getQuestions()) {
+            if (q.getScore() == null) continue;
+            sb.append("Q").append(q.getOrdinal()).append(" (score ").append(q.getScore()).append("/100): ")
+                    .append(q.getQuestionText()).append('\n');
+            if (q.getAnswerTranscript() != null)
+                sb.append("  answer: ").append(truncate(q.getAnswerTranscript(), 400)).append('\n');
+            if (q.getFeedback() != null)
+                sb.append("  notes: ").append(q.getFeedback()).append('\n');
+        }
+        return sb.toString();
+    }
+
+    private static String truncate(String s, int n) {
+        return s.length() <= n ? s : s.substring(0, n) + "…";
+    }
+
+    private SessionAnalysis parseAnalysis(String json) {
+        if (json != null && !json.isBlank()) {
+            try {
+                return MAPPER.readValue(json, SessionAnalysis.class);
+            } catch (Exception ignored) { /* legacy/absent → empty */ }
+        }
+        return new SessionAnalysis(null, List.of(), List.of(), List.of());
     }
 
     private String summaryFor(Integer overall) {

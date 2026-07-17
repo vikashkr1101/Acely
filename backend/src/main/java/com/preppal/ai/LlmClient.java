@@ -58,6 +58,41 @@ public abstract class LlmClient {
         return questions;
     }
 
+    // ── Whole-session debrief (grounded, relatable coach note + specifics) ──
+    public SessionAnalysis analyzeSession(String role, InterviewType type, ExperienceLevel level,
+                                          String perQuestion) throws Exception {
+        InterviewType t = type == null ? InterviewType.TECHNICAL : type;
+        String levelLabel = (level == null ? ExperienceLevel.FRESHER : level).label();
+        String system = """
+                You are a warm, honest interview coach writing a short debrief after a %s interview for a "%s" role.
+                The candidate is %s. Below is how they ACTUALLY did, question by question (score out of 100 + notes).
+
+                Write the debrief as JSON, speaking DIRECTLY to them ("you"). Ground EVERY point in the data below —
+                never invent facts, never use generic filler like "keep practising" or "you've got this". Be a real,
+                specific human coach: name a genuine strength and the main thing holding them back.
+                {"coach_note":"2-3 warm, specific sentences — a real strength you saw + the biggest thing to fix",
+                 "strengths":["2-3 short, specific strengths they actually showed"],
+                 "focus":["2-3 short, specific things to work on next"],
+                 "patterns":["0-2 observations ACROSS the questions (e.g. answers got vaguer on the harder ones, or strong structure throughout) — only include a pattern if it's really there"]}
+                """.formatted(kindLabel(t), role, levelLabel);
+
+        JsonNode n = MAPPER.readTree(extractJson(complete(system, perQuestion, 0.4)));
+        return new SessionAnalysis(
+                n.path("coach_note").asText(""),
+                toList(n.path("strengths")),
+                toList(n.path("focus")),
+                toList(n.path("patterns")));
+    }
+
+    private static List<String> toList(JsonNode arr) {
+        List<String> out = new ArrayList<>();
+        if (arr.isArray()) for (JsonNode e : arr) {
+            String s = e.asText("").trim();
+            if (!s.isBlank()) out.add(s);
+        }
+        return out;
+    }
+
     private static String kindLabel(InterviewType t) {
         return switch (t) {
             case TECHNICAL -> "technical";

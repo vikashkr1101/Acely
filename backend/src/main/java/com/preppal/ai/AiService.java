@@ -63,6 +63,15 @@ public class AiService {
                 AnswerScore::fallback);
     }
 
+    public SessionAnalysis analyzeSession(UUID userId, UUID sessionId, String role,
+                                          com.preppal.interview.InterviewType type,
+                                          com.preppal.interview.ExperienceLevel level,
+                                          String perQuestion, Integer overall) {
+        return withFailover(AiOperation.ANALYZE_SESSION, userId, sessionId,
+                c -> c.analyzeSession(role, type, level, perQuestion),
+                () -> SessionAnalysis.fallback(overall));
+    }
+
     // ── failover engine (shared by both operations) ─────────────────────────
     @FunctionalInterface
     private interface AiCall<T> {

@@ -1,5 +1,5 @@
 package com.preppal.ai;
 
 public enum AiOperation {
-    GENERATE_QUESTIONS, SCORE_ANSWER
+    GENERATE_QUESTIONS, SCORE_ANSWER, ANALYZE_SESSION
 }
