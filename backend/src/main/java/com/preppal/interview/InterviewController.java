@@ -50,9 +50,28 @@ public class InterviewController {
         interviews.recordNerves(user, id, req);
     }
 
+    /** Score ONE unanswered-but-unscored question (interview/checkpoint), so the client can page
+        through scoring with progress instead of one long request. */
+    @PostMapping("/{id}/score-next")
+    public ScoreProgress scoreNext(@AuthenticationPrincipal User user, @PathVariable UUID id) {
+        return interviews.scoreNext(user, id);
+    }
+
     @PostMapping("/{id}/complete")
     public InterviewDto complete(@AuthenticationPrincipal User user, @PathVariable UUID id) {
         return interviews.complete(user, id);
+    }
+
+    /** Discard an unfinished session (leaves it out of trends; not deleted). */
+    @PostMapping("/{id}/abandon")
+    public InterviewDto abandon(@AuthenticationPrincipal User user, @PathVariable UUID id) {
+        return interviews.abandon(user, id);
+    }
+
+    /** Permanently delete an unfinished mock (user chose "Discard"). Completed mocks are protected. */
+    @DeleteMapping("/{id}")
+    public void delete(@AuthenticationPrincipal User user, @PathVariable UUID id) {
+        interviews.delete(user, id);
     }
 
     @GetMapping("/{id}/report")

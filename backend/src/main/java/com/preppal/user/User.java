@@ -33,6 +33,14 @@ public class User {
     @Column(nullable = false)
     private String plan = "FREE";   // FREE | PRO
 
+    /** Primary interview TRACK (the readiness benchmark) + STACK (question personalization). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "primary_track")
+    private com.preppal.interview.InterviewTrack primaryTrack;
+
+    @Column(name = "primary_stack")
+    private String primaryStack;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 

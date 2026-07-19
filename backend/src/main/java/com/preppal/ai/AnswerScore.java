@@ -15,12 +15,13 @@ public record AnswerScore(
         int overall,
         String feedback,
         String modelAnswer,
-        String rubricJson) {
+        String rubricJson,
+        boolean estimated) {   // true = scored by the offline fallback, not a real AI evaluation
 
-    /** Graceful result when no AI provider could evaluate the answer. */
+    /** Graceful result when no AI provider could evaluate the answer — flagged as estimated. */
     public static AnswerScore fallback() {
         return new AnswerScore(65, 60, 65, 65, 64,
                 "Nice effort! We couldn't analyse this one in depth right now, but you're building the habit — keep going. 💪",
-                "", null);
+                "", null, true);
     }
 }

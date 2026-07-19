@@ -1,7 +1,10 @@
 package com.preppal.interview.dto;
 
+import com.preppal.interview.CompanyType;
+import com.preppal.interview.Difficulty;
 import com.preppal.interview.ExperienceLevel;
 import com.preppal.interview.InterviewMode;
+import com.preppal.interview.InterviewTrack;
 import com.preppal.interview.InterviewType;
 import com.preppal.interview.ScoringMode;
 import jakarta.validation.constraints.Max;
@@ -16,7 +19,16 @@ public record CreateInterviewRequest(
         InterviewType interviewType,
         ExperienceLevel experienceLevel,
         ScoringMode scoringMode,
-        @Min(3) @Max(8) Integer count) {
+        Difficulty difficulty,
+        Boolean checkpoint,
+        InterviewTrack track,
+        @Size(max = 60) String stack,
+        CompanyType companyType,
+        @Min(1) @Max(10) Integer count) {
+
+    public boolean isCheckpoint() {
+        return checkpoint != null && checkpoint;
+    }
 
     public InterviewMode modeOrDefault() {
         return mode == null ? InterviewMode.TEXT : mode;
@@ -32,6 +44,10 @@ public record CreateInterviewRequest(
 
     public ExperienceLevel levelOrDefault() {
         return experienceLevel == null ? ExperienceLevel.FRESHER : experienceLevel;
+    }
+
+    public Difficulty difficultyOrDefault() {
+        return Difficulty.orDefault(difficulty);
     }
 
     public int countOrDefault() {

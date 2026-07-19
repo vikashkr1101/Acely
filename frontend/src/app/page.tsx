@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export default function Home() {
   return (
@@ -15,7 +16,9 @@ export default function Home() {
           <nav className="nav-links">
             <a href="#try">Try it</a>
             <a href="#features">Features</a>
+            <Link href="/about">About</Link>
             <Link href="/login">Log in</Link>
+            <ThemeToggle className="nav-theme" />
           </nav>
           <Link href="/signup" className="btn sm">
             Sign up free
@@ -24,35 +27,42 @@ export default function Home() {
       </header>
 
       <main className="wrap">
-        {/* HERO (L1) */}
+        {/* HERO */}
         <section className="hero">
           <div>
-            <span className="ey">🎉 Free for students, forever</span>
+            <span className="ey">💜 100% Free · Built by a solo developer</span>
             <h1>
-              Interviews are scary.{" "}
-              <span className="grad-text">You won&apos;t be.</span>
+              Practice until you&apos;re interview-ready.{" "}
+              <span className="grad-text">Confidence follows.</span>
             </h1>
             <p className="lede">
-              Practice unlimited AI mock interviews, get gentle feedback, and
-              watch your fear shrink — the friendly way to get placement-ready.
+              Free, private AI mock interviews that get you interview-ready —
+              from your first job to your next one. Honest feedback, an honest
+              readiness benchmark, and a clear next step every time.
             </p>
             <div className="cta">
               <Link href="/signup" className="btn">
                 🎤 Start a free mock →
               </Link>
-              <a href="#try" className="btn o">
-                Try it now
-              </a>
+              <Link href="/about" className="btn o">
+                How it works
+              </Link>
             </div>
             <div className="trust">
               <span>
-                <b>Text · Voice · Video</b> mocks
+                <b>Text · Voice</b> mocks
               </span>
               <span>
-                <b>Kind</b> feedback
+                <b>Honest</b> feedback
               </span>
               <span>No card needed</span>
             </div>
+            <p style={{ marginTop: 16, fontSize: 13, color: "var(--faint)" }}>
+              For <b style={{ color: "var(--muted)" }}>students</b> ·{" "}
+              <b style={{ color: "var(--muted)" }}>freshers</b> ·{" "}
+              <b style={{ color: "var(--muted)" }}>career switchers</b> · anyone
+              with an interview coming up
+            </p>
           </div>
 
           <div className="mockcard" aria-hidden="true">
@@ -68,28 +78,28 @@ export default function Home() {
             <div className="rl">
               <span>● Listening — take your time</span>
               <span>
-                Live score <b>82</b>
+                Readiness <b>82</b>
               </span>
             </div>
           </div>
         </section>
 
-        {/* TRY (L3) */}
+        {/* OUTCOME STRIP + TRY */}
         <section id="try" className="tryband">
-          <span className="tt">👇 Try it right now — no signup</span>
-          <h3>Answer one question. Get instant AI feedback.</h3>
+          <span className="tt">🎤 Realistic mocks → 🎯 Honest feedback → 📈 True readiness</span>
+          <h3>Answer one question. See how PrepPal coaches you.</h3>
           <div className="try">
             <div className="lab">Sample · Frontend Developer</div>
             <div className="qq">
               What&apos;s the difference between props and state in React?
             </div>
-            <textarea rows={3} placeholder="Type your answer…" />
+            <textarea rows={3} placeholder="Type a line here — then sign up to get instant AI feedback…" />
             <div className="row">
               <span style={{ fontSize: 12.5, color: "var(--muted)" }}>
-                ✨ Free forever for students
+                ✨ Free forever — no card needed
               </span>
               <Link href="/signup" className="btn sm">
-                Get feedback →
+                Sign up to get feedback →
               </Link>
             </div>
           </div>
@@ -100,29 +110,29 @@ export default function Home() {
           <div className="f">
             <div className="i">🎤</div>
             <b>AI Mock Interviews</b>
-            <p>Text, voice &amp; video for any role.</p>
+            <p>Realistic questions for any role — text or voice.</p>
           </div>
           <div className="f">
-            <div className="i">💚</div>
-            <b>Gentle Feedback</b>
-            <p>Strengths first, always kind.</p>
+            <div className="i">🎯</div>
+            <b>Honest Feedback</b>
+            <p>Graded like a real interviewer — strengths first, always kind.</p>
           </div>
           <div className="f">
-            <div className="i">📉</div>
-            <b>Fear Tracker</b>
-            <p>Watch your nerves shrink over time.</p>
+            <div className="i">🧭</div>
+            <b>Readiness Benchmark</b>
+            <p>A standardized score that stays comparable — real progress, not a lucky day. Hard to fake, hard to copy.</p>
           </div>
           <div className="f">
-            <div className="i">💼</div>
-            <b>Fresher Jobs</b>
-            <p>Matched to your profile.</p>
+            <div className="i">📈</div>
+            <b>Your Journey</b>
+            <p>Watch your readiness climb over time.</p>
           </div>
         </section>
       </main>
 
       <footer className="footer">
-        Built with 💜 for students · <span className="grad-text">PrepPal</span> ©
-        2026
+        Built with 💜 for anyone with an interview coming up ·{" "}
+        <Link href="/about" className="grad-text">About</Link> · PrepPal © 2026
       </footer>
     </>
   );

@@ -16,6 +16,20 @@ spring:
       hibernate:
         format_sql: false
 
+  mail:
+    # SMTP for transactional email (password reset). Use any free provider (Brevo / Resend / etc.).
+    # Leave unset in dev — the reset link is logged instead (see preppal.mail.enabled).
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
   flyway:
     enabled: true
     baseline-on-migrate: true
@@ -27,6 +41,15 @@ server:
 
 # App-specific config
 preppal:
+  app:
+    # Public URL of the frontend — used to build password-reset links.
+    base-url: ${APP_BASE_URL:http://localhost:3000}
+  mail:
+    # When false (default), password-reset emails are NOT sent — the link is logged instead (dev-safe).
+    # Set MAIL_ENABLED=true + spring.mail.* in prod to actually send.
+    enabled: ${MAIL_ENABLED:false}
+    from: ${MAIL_FROM:PrepPal <no-reply@preppal.app>}
+    reset-ttl-minutes: ${RESET_TTL_MINUTES:45}
   jwt:
     # 256-bit secret (override in prod!). Base64 or plain long string.
     secret: ${JWT_SECRET:change-me-in-prod-this-is-a-long-dev-only-secret-key-0123456789}
@@ -39,20 +62,35 @@ preppal:
     failover: ${AI_FAILOVER:ZHIPU,GEMINI,GROQ}
     # Scoring uses Gemini first (more consistent technical judging); Zhipu/Groq behind it.
     failover-score: ${AI_FAILOVER_SCORE:GEMINI,ZHIPU,GROQ}
+    # Retries on the SAME provider (exponential backoff 500ms/1s/2s…) on a 429 before failing over. 0 disables.
+    retry-429: ${AI_RETRY_429:2}
   zhipu:
     api-key: ${ZHIPU_API_KEY:}
     model: ${ZHIPU_MODEL:glm-4.5-flash}
     base-url: ${ZHIPU_BASE_URL:https://api.z.ai/api/paas/v4}
   gemini:
     api-key: ${GEMINI_API_KEY:}
-    model: ${GEMINI_MODEL:gemini-2.5-flash-lite}   # 2.0 series was retired Mar 2026 (returns limit:0)
+    # 2.0 retired Mar 2026 (limit:0); 2.5 series now 404s for newly-created keys (Google locking it to
+    # push Gemini 3). Verify the exact name in AI Studio for YOUR key and override via GEMINI_MODEL.
+    model: ${GEMINI_MODEL:gemini-3.1-flash-lite}
     base-url: https://generativelanguage.googleapis.com/v1beta
   groq:
     api-key: ${GROQ_API_KEY:}
     model: ${GROQ_MODEL:llama-3.3-70b-versatile}
     base-url: https://api.groq.com/openai/v1
+  interview:
+    # Max adaptive follow-up questions generated per mock (0 disables). Grounded in the candidate's answer.
+    followups-per-session: ${FOLLOWUPS_PER_SESSION:2}
   free:
     monthly-mocks: ${FREE_MONTHLY_MOCKS:20}   # free mocks per user per month
+  admin:
+    # Comma-separated emails allowed to reach /api/admin/** (server-enforced, case-insensitive).
+    emails: ${ADMIN_EMAILS:vikash1128kumar@gmail.com}
+  ratelimit:
+    # Max requests per user per minute to /api/interviews/** (guards free-tier AI quota).
+    per-minute: ${RATE_LIMIT_PER_MINUTE:40}
+    # Max password-reset requests per IP per hour (stops reset-email spam at a user).
+    forgot-per-hour: ${FORGOT_PER_HOUR:6}
 
 logging:
   level:

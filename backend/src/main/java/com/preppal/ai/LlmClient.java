@@ -3,6 +3,7 @@ package com.preppal.ai;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.preppal.common.InvalidInputException;
+import com.preppal.interview.Difficulty;
 import com.preppal.interview.ExperienceLevel;
 import com.preppal.interview.InterviewType;
 
@@ -27,14 +28,17 @@ public abstract class LlmClient {
     /** Send a prompt to the provider and return the raw model text (expected to be JSON). */
     protected abstract String complete(String systemPrompt, String userPrompt, double temperature) throws Exception;
 
-    // ── Question generation (type-aware + level-aware) ─────────────────────
+    // ── Question generation (type-aware + level-aware + difficulty-aware) ──
     public List<GeneratedQuestion> generateQuestions(String role, String jd, int count,
-                                                     InterviewType type, ExperienceLevel level) throws Exception {
+                                                     InterviewType type, ExperienceLevel level,
+                                                     Difficulty difficulty, String contextHint) throws Exception {
         InterviewType t = type == null ? InterviewType.TECHNICAL : type;
         String levelLabel = (level == null ? ExperienceLevel.FRESHER : level).label();
         String system = """
                 You are an expert, friendly interviewer running a %s interview for a "%s" role.
                 The candidate is %s — calibrate difficulty and expectations to that level.
+                %s
+                %s
                 %s
                 Generate exactly %d realistic questions of this kind, ordered easiest-first to build
                 confidence. Keep each to one or two sentences and stay within the interview type above.
@@ -42,7 +46,9 @@ public abstract class LlmClient {
                 respond ONLY with {"invalid_role":true} and no questions.
                 Otherwise respond with ONLY valid JSON in exactly this shape:
                 {"questions":[{"text":"..."}]}
-                """.formatted(kindLabel(t), role, levelLabel, typeGuidance(t), count);
+                """.formatted(kindLabel(t), role, levelLabel, typeGuidance(t),
+                Difficulty.orDefault(difficulty).generationGuidance(),
+                contextHint == null || contextHint.isBlank() ? "" : contextHint, count);
         String user = "Role: " + role + "\nContext / job description: " + (jd == null || jd.isBlank() ? "not provided" : jd);
 
         JsonNode root = MAPPER.readTree(extractJson(complete(system, user, 0.7)));
@@ -56,6 +62,71 @@ public abstract class LlmClient {
         }
         if (questions.isEmpty()) throw new IllegalStateException("No questions parsed from response");
         return questions;
+    }
+
+    // ── Mixed generation (a full interview across sections; each question tagged) ──
+    public List<GeneratedQuestion> generateMixed(String role, String jd, int count,
+                                                 ExperienceLevel level, Difficulty difficulty, String trackHint) throws Exception {
+        String levelLabel = (level == null ? ExperienceLevel.FRESHER : level).label();
+        String quota = sectionQuota(count); // enforce balance so "every section" is actually true
+        String system = """
+                You are running a REALISTIC full interview for a "%s" role — the kind a candidate faces in
+                one sitting, spanning multiple sections. The candidate is %s.
+                %s
+                Generate EXACTLY this mix (total %d questions): %s.
+                Sections: HR (motivation / fit), TECHNICAL (fundamentals / problem-solving),
+                BEHAVIORAL (STAR-style stories), PROJECT (their own work). Make each relevant to the role.
+                %s
+                Order like a real interview: a warm HR / intro question first, then technical + behavioural,
+                ending on a forward-looking or project one. Tag EACH question with its exact section.
+                If the role is NOT a recognisable job title (gibberish), respond ONLY with {"invalid_role":true}.
+                Otherwise respond with ONLY valid JSON in exactly this shape:
+                {"questions":[{"text":"...","section":"HR|TECHNICAL|BEHAVIORAL|PROJECT"}]}
+                """.formatted(role, levelLabel, Difficulty.orDefault(difficulty).generationGuidance(), count, quota,
+                trackHint == null || trackHint.isBlank() ? "" : trackHint);
+        String user = "Role: " + role + "\nContext / job description: " + (jd == null || jd.isBlank() ? "not provided" : jd);
+
+        JsonNode root = MAPPER.readTree(extractJson(complete(system, user, 0.7)));
+        if (root.path("invalid_role").asBoolean(false)) {
+            throw new InvalidInputException("That doesn't look like a real role — try something like \"Frontend Developer\".");
+        }
+        List<GeneratedQuestion> questions = new ArrayList<>();
+        for (JsonNode q : root.path("questions")) {
+            String text = q.path("text").asText(null);
+            if (text != null && !text.isBlank()) {
+                questions.add(new GeneratedQuestion(text.trim(), parseSection(q.path("section").asText(""))));
+            }
+        }
+        if (questions.isEmpty()) throw new IllegalStateException("No questions parsed from response");
+        return questions;
+    }
+
+    /** The "gate" dimension whose failure caps the whole answer (normalised key). null = no gate. */
+    private static String gateDimension(InterviewType type) {
+        if (type == null) return null;
+        return switch (type) {
+            case TECHNICAL -> "correctness"; // a factually wrong technical answer can't pass
+            case PROJECT -> "ownership";      // can't credit a project they can't show they owned
+            default -> null;                  // HR / Behavioral have no single fatal dimension
+        };
+    }
+
+    /** Split a mixed count into a balanced per-section quota (extras lean technical/behavioural). */
+    private static String sectionQuota(int count) {
+        int per = count / 4, extra = count % 4;
+        int hr = per, tech = per, beh = per, proj = per;
+        if (extra >= 1) tech++;
+        if (extra >= 2) beh++;
+        if (extra >= 3) proj++;
+        return tech + " Technical, " + beh + " Behavioral, " + hr + " HR, " + proj + " Project";
+    }
+
+    private static InterviewType parseSection(String s) {
+        try {
+            return InterviewType.valueOf(s.trim().toUpperCase());
+        } catch (Exception e) {
+            return InterviewType.TECHNICAL; // safe default; question still scores against a rubric
+        }
     }
 
     // ── Whole-session debrief (grounded, relatable coach note + specifics) ──
@@ -84,6 +155,24 @@ public abstract class LlmClient {
                 toList(n.path("patterns")));
     }
 
+    // ── Adaptive follow-up: one grounded probe based on what they just said ──
+    public String followUp(String role, InterviewType type, ExperienceLevel level,
+                           String question, String answer) throws Exception {
+        InterviewType t = type == null ? InterviewType.TECHNICAL : type;
+        String levelLabel = (level == null ? ExperienceLevel.FRESHER : level).label();
+        String system = """
+                You are an interviewer in a %s interview for a "%s" role. The candidate is %s.
+                Read their answer and, LIKE A REAL INTERVIEWER, ask ONE natural follow-up that digs into
+                something SPECIFIC they said — a claim, a tool, a decision, or a gap — and is tied to the role.
+                Keep it to a single sentence. If the answer is too thin, empty, or off-topic to build on,
+                return an empty string instead of forcing one.
+                Respond with ONLY JSON: {"follow_up":"..."}  (use "" when there's nothing worth asking).
+                """.formatted(kindLabel(t), role, levelLabel);
+        String user = "Question: " + question + "\nCandidate's answer: " + answer;
+        JsonNode n = MAPPER.readTree(extractJson(complete(system, user, 0.6)));
+        return n.path("follow_up").asText("").trim();
+    }
+
     private static List<String> toList(JsonNode arr) {
         List<String> out = new ArrayList<>();
         if (arr.isArray()) for (JsonNode e : arr) {
@@ -106,7 +195,7 @@ public abstract class LlmClient {
         return switch (t) {
             case TECHNICAL -> "Ask technical questions: core fundamentals, problem-solving, and 'how would you approach' questions relevant to the role. Do NOT ask HR or behavioural questions.";
             case BEHAVIORAL -> "Ask behavioural questions that invite STAR-style stories (a real situation, the actions they took, the result) about teamwork, conflict, ownership, and learning.";
-            case HR -> "Ask HR / motivation questions: tell me about yourself, strengths and weaknesses, why this role and company, career goals, and situational fit.";
+            case HR -> "Ask ONLY HR / motivation / fit questions — e.g. tell me about yourself, strengths and weaknesses, why this role and company, career goals, how you handle pressure, and situational fit. Do NOT ask technical, coding, system-design, or project-implementation questions; keep every question about motivation, fit, and self-reflection, whatever the role.";
             case PROJECT -> "Ask questions about the candidate's OWN projects and experience (use the job description/context if given): their specific role, the technical decisions and why, challenges they solved, and the impact.";
         };
     }
@@ -119,7 +208,7 @@ public abstract class LlmClient {
     // so the warm tone can't inflate the numbers. Overall + the canonical-4 report axes are then
     // computed IN CODE from the returned dimension scores (never trusting the model's own maths).
     public AnswerScore evaluateAnswer(String question, String answer, InterviewType type,
-                                      ExperienceLevel level, Rubric rubric) throws Exception {
+                                      ExperienceLevel level, Rubric rubric, Difficulty difficulty) throws Exception {
         JsonNode rubricDims = MAPPER.readTree(rubric.getDimensions());
         String levelLabel = (level == null ? ExperienceLevel.FRESHER : level).label();
 
@@ -145,15 +234,24 @@ public abstract class LlmClient {
                 Be harsh and specific. Most real answers land 40-70; only genuinely strong, complete
                 answers exceed 80. A vague, rambling, or off-topic answer scores low even when the topic
                 is right. Do NOT inflate.
+                %s
 
                 Only AFTER scoring, write short encouraging feedback for the candidate — lead with a real
                 strength, then the single most important thing to improve — and a concise strong example answer.
 
+                The example answer is EDUCATIONAL, not a rewrite of the candidate's life. NEVER invent
+                specifics on their behalf — no fake project names, company names, percentages, millisecond
+                figures, record counts, or production experience. Show the SHAPE of a strong answer
+                (structure, what to cover, the kind of detail to add) so they can fill it with their own
+                real experience.
+
                 Respond with ONLY valid JSON in exactly this shape:
                 {"dimensions":[{"key":"<dimension key>","score":0-100,"evidence":"<short quote or empty>"}],
-                 "feedback":"kind, specific, 2-3 sentences","model_answer":"a concise strong example answer"}
+                 "feedback":"kind, specific, 2-3 sentences","model_answer":"a concise strong example answer (no invented specifics)"}
                 """.formatted(rubric.getLabel(), levelLabel, rubric.getTopAnswerGuidance(),
-                dimList.toString().trim(), rubric.getBandAnchors());
+                dimList.toString().trim(), rubric.getBandAnchors(),
+                Difficulty.orDefault(difficulty).gradingGuidance()
+                        + ExperienceLevel.orDefault(level).gradingExpectation());
         String user = "Question: " + question + "\nCandidate's answer: " + answer;
 
         JsonNode resp = MAPPER.readTree(extractJson(complete(system, user, 0.2)));
@@ -178,6 +276,12 @@ public abstract class LlmClient {
         }
         int overall = weightTotal > 0 ? (int) Math.round(weightedSum / weightTotal) : avg(scores);
 
+        // Gatekeeper: a factually WRONG technical answer can't pass on communication alone — if the
+        // gate dimension is very low, the whole answer is capped to it (a real interviewer's instinct).
+        String gateKey = gateDimension(type);
+        Integer gate = gateKey == null ? null : scores.get(gateKey);
+        if (gate != null && gate < 40) overall = Math.min(overall, gate);
+
         // project onto the canonical 4 report axes so the bars are never empty
         JsonNode axisMap = MAPPER.readTree(rubric.getAxisMap());
         String rubricJson = MAPPER.writeValueAsString(Map.of("dimensions", dimsNode, "overall", overall));
@@ -189,7 +293,8 @@ public abstract class LlmClient {
                 overall,
                 resp.path("feedback").asText("Good effort — keep practising!"),
                 resp.path("model_answer").asText(""),
-                rubricJson);
+                rubricJson,
+                false); // real AI evaluation (not the offline fallback)
     }
 
     // ── helpers ────────────────────────────────────────────────────────────

@@ -16,5 +16,8 @@ public record ReportSummary(
         Integer nervesBefore,
         Integer nervesAfter,
         String topSkill,
+        String scoringMode,
+        String interviewType,
+        boolean checkpoint,
         Instant createdAt) {
 }

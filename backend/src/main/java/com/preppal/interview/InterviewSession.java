@@ -64,6 +64,27 @@ public class InterviewSession {
     @Column(name = "scoring_mode")
     private ScoringMode scoringMode;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "difficulty")
+    private Difficulty difficulty;
+
+    /** Standardized mixed measurement (fixed Hard, single-shot) — a comparable readiness milestone. */
+    @Column(nullable = false)
+    private boolean checkpoint = false;
+
+    /** The benchmark track + stack this session was taken on (checkpoints) — kept per-session so the
+     *  report reflects the track active when it was taken, even if the user changes track later. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "track")
+    private InterviewTrack track;
+
+    @Column(name = "stack")
+    private String stack;
+
+    /** True if any answer was scored by the offline fallback → shown as estimated, excluded from readiness. */
+    @Column(name = "has_estimated", nullable = false)
+    private boolean hasEstimated = false;
+
     @Column(name = "prompt_version")
     private String promptVersion;
 

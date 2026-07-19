@@ -13,6 +13,8 @@ public record InterviewDto(
         String role,
         InterviewMode mode,
         SessionStatus status,
+        String scoringMode,
+        boolean checkpoint,
         Integer overallScore,
         String summary,
         Instant createdAt,
@@ -21,6 +23,8 @@ public record InterviewDto(
     public static InterviewDto from(InterviewSession s) {
         return new InterviewDto(
                 s.getId(), s.getRole(), s.getMode(), s.getStatus(),
+                s.getScoringMode() == null ? null : s.getScoringMode().name(),
+                s.isCheckpoint(),
                 s.getOverallScore(), s.getSummary(), s.getCreatedAt(),
                 s.getQuestions().stream().map(QuestionDto::from).toList());
     }
