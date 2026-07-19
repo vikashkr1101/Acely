@@ -1,4 +1,12 @@
-import type { Report } from "@/lib/api";
+import type { Report, InterviewType, ExperienceLevel } from "@/lib/api";
+
+const TYPE_LABEL: Record<InterviewType, string> = {
+  HR: "HR", TECHNICAL: "Technical", BEHAVIORAL: "Behavioral", PROJECT: "Project",
+};
+const LEVEL_LABEL: Record<ExperienceLevel, string> = {
+  FRESHER: "Fresher", ZERO_ONE: "0-1 yrs", ONE_TWO: "1-2 yrs",
+  TWO_THREE: "2-3 yrs", THREE_FIVE: "3-5 yrs", FIVE_PLUS: "5+ yrs",
+};
 
 type RGB = [number, number, number];
 const BRAND: RGB = [192, 38, 211];
@@ -16,10 +24,11 @@ const G: RGB = [22, 163, 74], G_BG: RGB = [231, 248, 238];
 const A: RGB = [217, 119, 6], A_BG: RGB = [253, 241, 224];
 const R: RGB = [220, 38, 38], R_BG: RGB = [253, 234, 234];
 
+// Matches the on-screen report: green ≥70, amber 40–69, red only under 40.
 function band(v: number | null): { fg: RGB; bg: RGB } {
   if (v == null) return { fg: A, bg: A_BG };
   if (v >= 70) return { fg: G, bg: G_BG };
-  if (v >= 50) return { fg: A, bg: A_BG };
+  if (v >= 40) return { fg: A, bg: A_BG };
   return { fg: R, bg: R_BG };
 }
 function verdictLabel(v: number | null) {
@@ -118,8 +127,14 @@ export async function downloadReportPdf(report: Report, userName: string) {
   {
     const chips: { t: string; brand?: boolean }[] = [
       { t: report.role, brand: true },
+      ...(report.checkpoint ? [{ t: "Readiness Check" }] : []),
+      ...(report.interviewType ? [{ t: TYPE_LABEL[report.interviewType] }] : []),
+      ...(report.experienceLevel ? [{ t: LEVEL_LABEL[report.experienceLevel] }] : []),
+      ...(report.checkpoint ? [{ t: "Benchmark" }] : report.difficulty === "HARD" ? [{ t: "Hard" }] : []),
+      ...(report.checkpoint && report.stack ? [{ t: report.stack }] : []),
+      ...(report.scoringMode && !report.checkpoint ? [{ t: report.scoringMode === "INTERVIEW" ? "Mock Interview" : "Practice" }] : []),
       { t: report.mode === "VOICE" ? "Voice" : "Text" },
-      { t: `${report.questions.length} questions` },
+      { t: report.questions.length === 1 ? "1 question" : `${report.questions.length} questions` },
       { t: dateStr },
     ];
     let cxp = M;
@@ -133,12 +148,16 @@ export async function downloadReportPdf(report: Report, userName: string) {
   const sc = report.overallScore;
   const sb = band(sc);
   const scStr = `${sc ?? "—"}`;
-  const competencies = [
-    { label: "Communication", value: report.communication },
-    { label: "Technical depth", value: report.technical },
-    { label: "Clarity", value: report.clarity },
-    { label: "Relevance", value: report.relevance },
-  ];
+  // This interview type's real dimensions (fallback to canonical-4 for legacy sessions).
+  const typeDims = (report.dimensions ?? []).filter((d) => d.score != null);
+  const competencies = typeDims.length
+    ? typeDims.map((d) => ({ label: d.label, value: d.score as number }))
+    : [
+        { label: "Communication", value: report.communication },
+        { label: "Technical depth", value: report.technical },
+        { label: "Clarity", value: report.clarity },
+        { label: "Relevance", value: report.relevance },
+      ];
   const hasSubs = competencies.reduce((s, c) => s + c.value, 0) > 0;
   const sorted = [...competencies].sort((x, z) => z.value - x.value);
   const standing = hasSubs
@@ -199,15 +218,20 @@ export async function downloadReportPdf(report: Report, userName: string) {
   }
 
   // ── strengths / focus ──
-  const strengths = hasSubs
+  // Prefer the AI's grounded analysis; fall back to derived only for legacy pre-analysis sessions.
+  const derivedStrengths = hasSubs
     ? sorted.filter((c) => c.value >= 70).slice(0, 3).map((c) => `Strong ${c.label.toLowerCase()}`)
     : [];
-  const strengthList = strengths.length ? strengths : ["You showed up and practised — that's the hardest part"];
-  const focusList = [
-    hasSubs ? `Go deeper on ${sorted[sorted.length - 1].label.toLowerCase()}` : "Add specific, concrete detail",
-    "Quantify your impact with numbers and outcomes",
-    "Retry this mock to lock in the improvement",
-  ];
+  const strengthList = report.strengths?.length
+    ? report.strengths
+    : derivedStrengths.length ? derivedStrengths : ["You showed up and practised — that's the hardest part"];
+  const focusList = report.focus?.length
+    ? report.focus
+    : [
+        hasSubs ? `Go deeper on ${sorted[sorted.length - 1].label.toLowerCase()}` : "Add specific, concrete detail",
+        "Quantify your impact with numbers and outcomes",
+        "Retry this mock to lock in the improvement",
+      ];
   const bulletList = (title: string, items: string[], dot: RGB) => {
     section(title);
     for (const s of items) {
@@ -222,6 +246,12 @@ export async function downloadReportPdf(report: Report, userName: string) {
   };
   bulletList("What went well", strengthList, G);
   bulletList("Focus next", focusList, BRAND);
+  // patterns across the session — cross-question observations, only when the AI produced them
+  if (report.patterns?.length) bulletList("Patterns we noticed", report.patterns, [91, 83, 201]);
+  // the coach ending — the same ranked next-steps shown on screen (text carries the action)
+  if (report.recommendations?.length) {
+    bulletList("Before your next interview", report.recommendations.map((r) => r.text), BRAND);
+  }
 
   // ── question by question ──
   section("Question by question");
@@ -231,10 +261,26 @@ export async function downloadReportPdf(report: Report, userName: string) {
     const qLines = wrap(qq.text, "bold", 10.5, innerW);
     const aLines = qq.answer ? wrap(qq.answer, "italic", 9.5, innerW - 10) : [];
     const fLines = qq.feedback ? wrap(qq.feedback, "normal", 9.5, innerW - 62) : [];
+    // this type's real dimensions, compact one-liner (evidence stays an on-screen "on tap" detail)
+    const dims = (qq.dimensions ?? []).filter((d) => d.score != null);
+    const dimStr = dims.map((d) => `${d.label} ${d.score}`).join("    ");
+    const dLines = dimStr ? wrap(dimStr, "bold", 8.5, innerW) : [];
+    // retry: first -> improved (the proof of learning must show)
+    const atts = qq.attempts ?? [];
+    const retried = atts.length > 1;
+    const rFirst = retried ? atts[0].score : null;
+    const rLast = retried ? atts[atts.length - 1].score : null;
+    const rDelta = rFirst != null && rLast != null ? rLast - rFirst : null;
+    const rStr = retried
+      ? `Retried: ${rFirst ?? "-"} -> ${rLast ?? "-"}${rDelta != null && rDelta > 0 ? ` (+${rDelta})` : ""}`
+      : "";
+    const rLines = rStr ? wrap(rStr, "bold", 9, innerW) : [];
     const qH = qLines.length * 14;
     const aH = aLines.length ? aLines.length * 13 + 8 : 0;
     const fH = fLines.length ? Math.max(fLines.length * 13, 16) + 12 : 0;
-    const cardH = 14 + 24 + qH + aH + fH + 14;
+    const dH = dLines.length ? dLines.length * 12 + 10 : 0;
+    const rH = rLines.length ? rLines.length * 13 + 6 : 0;
+    const cardH = 14 + 24 + qH + aH + fH + dH + rH + 14;
 
     ensure(cardH + 12);
     const top = y;
@@ -243,8 +289,9 @@ export async function downloadReportPdf(report: Report, userName: string) {
     doc.roundedRect(M, top, contentW, cardH, 14, 14, "S");
 
     let cy = top + 14;
-    // top row: Q pill + score pill
-    pill(M + padX, cy, 20, `Q${qq.ordinal ?? i + 1}`, SOFT, [134, 25, 143], 9);
+    // top row: Q pill (+ follow-up pill) + score pill
+    const qpw = pill(M + padX, cy, 20, `Q${qq.ordinal ?? i + 1}`, SOFT, [134, 25, 143], 9);
+    if (qq.followUp) pill(M + padX + qpw + 6, cy, 20, "Follow-up", [234, 233, 255], [91, 83, 201], 8.5);
     const qb = band(qq.score);
     const svStr = `${qq.score ?? "—"}`;
     font("bold", 11); const swp = doc.getTextWidth(svStr) + 20;
@@ -273,6 +320,21 @@ export async function downloadReportPdf(report: Report, userName: string) {
       font("normal", 9.5); ink(INK_SOFT);
       let fy = cy;
       for (const ln of fLines) { doc.text(ln, M + padX + tagW + 10, fy); fy += 13; }
+      cy = Math.max(fy, cy + 6);
+    }
+
+    // dimension scores (this type's real axes)
+    if (dLines.length) {
+      cy += 10;
+      font("bold", 8.5); ink(MUTED);
+      for (const ln of dLines) { doc.text(ln, M + padX, cy); cy += 12; }
+    }
+
+    // retry delta
+    if (rLines.length) {
+      cy += 6;
+      font("bold", 9); ink(G);
+      for (const ln of rLines) { doc.text(ln, M + padX, cy); cy += 13; }
     }
 
     y = top + cardH + 12;

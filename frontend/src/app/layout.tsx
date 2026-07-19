@@ -9,17 +9,28 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "PrepPal — Ace your interviews, fear-free",
+  title: {
+    default: "PrepPal — Practice until you're interview-ready",
+    template: "%s · PrepPal",
+  },
   description:
-    "Free AI mock interviews for students & freshers. Practice for any role, get kind feedback, and watch your interview nerves shrink.",
+    "Free, private AI mock interviews that get you interview-ready — honest feedback, a real readiness score, and a clear next step every time.",
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${jakarta.variable} antialiased`}>
-      <body>{children}</body>
+    <html lang="en" className={`${jakarta.variable} antialiased`} suppressHydrationWarning>
+      <body>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=sessionStorage.getItem('ppl_theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}",
+          }}
+        />
+        {children}
+      </body>
     </html>
   );
 }

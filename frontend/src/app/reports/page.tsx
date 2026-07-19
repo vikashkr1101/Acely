@@ -5,29 +5,28 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FiChevronRight } from "react-icons/fi";
 import { AppShell } from "@/components/layout/AppShell";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Loader } from "@/components/ui/Loader";
-import { api, getToken, type ReportSummary } from "@/lib/api";
+import { api, getToken, type ReportSummary, type InterviewType } from "@/lib/api";
+import { scoreColor } from "@/lib/score";
+import { TYPE_LABEL, TYPE_COLOR } from "@/lib/interview";
 
-function scoreColor(v: number | null): string {
-  if (v == null) return "var(--faint)";
-  if (v >= 80) return "#16a34a";
-  if (v >= 60) return "#f59e0b";
-  return "#ef4444";
-}
+const TYPES: InterviewType[] = ["HR", "TECHNICAL", "BEHAVIORAL", "PROJECT"];
 
 function fmtDate(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-type Filter = "all" | "text" | "voice";
+type ModeFilter = "all" | "PRACTICE" | "INTERVIEW" | "CHECKPOINT";
 
 export default function ReportsPage() {
   const router = useRouter();
   const [reports, setReports] = useState<ReportSummary[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [filter, setFilter] = useState<Filter>("all");
+  const [mode, setMode] = useState<ModeFilter>("all");
+  const [typeF, setTypeF] = useState<InterviewType | "all">("all");
 
   useEffect(() => {
     if (!getToken()) {
@@ -54,11 +53,25 @@ export default function ReportsPage() {
     };
   }, [done]);
 
+  // Permanently delete an unfinished mock — optimistic remove, restore on failure.
+  async function discard(id: string) {
+    const prev = reports;
+    setReports((rs) => (rs ? rs.filter((r) => r.id !== id) : rs));
+    try {
+      await api.deleteMock(id);
+    } catch {
+      setReports(prev);
+    }
+  }
+
   const shown = useMemo(() => {
-    const list = reports ?? [];
-    if (filter === "all") return list;
-    return list.filter((r) => r.mode.toLowerCase() === filter);
-  }, [reports, filter]);
+    let list = reports ?? [];
+    if (mode === "CHECKPOINT") list = list.filter((r) => r.checkpoint);
+    else if (mode === "PRACTICE") list = list.filter((r) => !r.checkpoint && r.scoringMode === "PRACTICE");
+    else if (mode === "INTERVIEW") list = list.filter((r) => !r.checkpoint && r.scoringMode === "INTERVIEW");
+    if (mode === "PRACTICE" && typeF !== "all") list = list.filter((r) => r.interviewType === typeF);
+    return list;
+  }, [reports, mode, typeF]);
 
   return (
     <AppShell>
@@ -66,10 +79,7 @@ export default function ReportsPage() {
         <Loader label="Loading your reports…" />
       ) : error ? (
         <div className="rpl">
-          <div className="rpl-head">
-            <h1>Reports</h1>
-            <p>Every mock you finish shows up here — scores, nerves, and where to focus next.</p>
-          </div>
+          <PageHeader eyebrow="Your history" title="Reports" subtitle="Every mock you finish shows up here — scores, nerves, and where to focus next." />
           <div className="rpl-empty">
             <div className="em">🔌</div>
             <h3>Couldn&apos;t load your reports</h3>
@@ -78,10 +88,7 @@ export default function ReportsPage() {
         </div>
       ) : (reports ?? []).length === 0 ? (
         <div className="rpl">
-          <div className="rpl-head">
-            <h1>Reports</h1>
-            <p>Every mock you finish shows up here — scores, nerves, and where to focus next.</p>
-          </div>
+          <PageHeader eyebrow="Your history" title="Reports" subtitle="Every mock you finish shows up here — scores, nerves, and where to focus next." />
           <div className="rpl-empty">
             <div className="em">📊</div>
             <h3>No reports yet</h3>
@@ -91,10 +98,7 @@ export default function ReportsPage() {
         </div>
       ) : (
         <div className="rpl">
-          <div className="rpl-head">
-            <h1>Reports</h1>
-            <p>Every mock you&apos;ve taken — tap any one for the full breakdown.</p>
-          </div>
+          <PageHeader eyebrow="Your history" title="Reports" subtitle="Every mock you've taken — tap any one for the full breakdown." />
 
           {/* overview */}
           <div className="rpl-stats">
@@ -103,18 +107,26 @@ export default function ReportsPage() {
             <div className="db-tile"><div className="n" style={{ color: scoreColor(stats.best) }}>{stats.best}<small>/100</small></div><div className="l">Best score</div></div>
           </div>
 
-          {/* filters */}
+          {/* filters — by mode, then (for practice) by section */}
           <div className="rpl-filter">
-            {([["all", "All"], ["text", "Text"], ["voice", "Voice"]] as const).map(([key, label]) => (
+            {([["all", "All"], ["PRACTICE", "Practice"], ["INTERVIEW", "Mock Interview"], ["CHECKPOINT", "Readiness Checks"]] as const).map(([key, label]) => (
               <button
                 key={key}
-                className={`rpl-chip${filter === key ? " on" : ""}`}
-                onClick={() => setFilter(key)}
+                className={`rpl-chip${mode === key ? " on" : ""}`}
+                onClick={() => { setMode(key); if (key !== "PRACTICE") setTypeF("all"); }}
               >
                 {label}
               </button>
             ))}
           </div>
+          {mode === "PRACTICE" && (
+            <div className="rpl-filter rpl-filter-sub">
+              <button className={`rpl-chip sm${typeF === "all" ? " on" : ""}`} onClick={() => setTypeF("all")}>All sections</button>
+              {TYPES.map((t) => (
+                <button key={t} className={`rpl-chip sm${typeF === t ? " on" : ""}`} onClick={() => setTypeF(t)}>{TYPE_LABEL[t]}</button>
+              ))}
+            </div>
+          )}
 
           {/* list */}
           <div className="rpl-list">
@@ -135,14 +147,29 @@ export default function ReportsPage() {
                   <div className="rpl-mid">
                     <div className="rpl-role">{r.role}</div>
                     <div className="rpl-meta">
-                      <span className="mode">{r.mode === "VOICE" ? "🎙 Voice" : "⌨ Text"}</span>
+                      {r.checkpoint ? (
+                        <span className="mode rpl-readiness">🧭 Readiness Check</span>
+                      ) : (
+                        <span className="mode" style={r.interviewType && r.scoringMode !== "INTERVIEW" ? { color: TYPE_COLOR[r.interviewType] } : undefined}>
+                          {r.scoringMode === "INTERVIEW" ? "Mock Interview" : r.interviewType ? TYPE_LABEL[r.interviewType] : "Practice"}
+                        </span>
+                      )}
                       <span>{r.questionCount} question{r.questionCount === 1 ? "" : "s"}</span>
                       <span>{fmtDate(r.createdAt)}</span>
                     </div>
                   </div>
                   <div className="rpl-tags">
                     {inProgress ? (
-                      <span className="rpl-progress">In progress</span>
+                      <>
+                        <span className="rpl-progress">In progress</span>
+                        <button
+                          className="rpl-discard"
+                          title="Discard this unfinished mock"
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); discard(r.id); }}
+                        >
+                          Discard
+                        </button>
+                      </>
                     ) : (
                       <>
                         {nerveDrop != null && <span className="rpl-nerve">Nerves −{nerveDrop}</span>}

@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
-import type { InputHTMLAttributes, ReactNode } from "react";
+import { useState, type InputHTMLAttributes, type ReactNode } from "react";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 
 interface AuthShellProps {
   title: string;
@@ -32,12 +35,39 @@ export function AuthShell({ title, subtitle, altText, altHref, altLabel, childre
   );
 }
 
-/** Labelled input used in both auth forms. */
-export function Field({ label, ...props }: { label: string } & InputHTMLAttributes<HTMLInputElement>) {
+/**
+ * Labelled input used in both auth forms. Accepts an optional leading `icon`; password fields
+ * automatically get a show/hide eye toggle.
+ */
+export function Field({
+  label,
+  icon,
+  type,
+  ...props
+}: { label: string; icon?: ReactNode } & InputHTMLAttributes<HTMLInputElement>) {
+  const [show, setShow] = useState(false);
+  const isPassword = type === "password";
+  const inputType = isPassword ? (show ? "text" : "password") : type;
+  const cls = `${icon ? "has-ic" : ""}${isPassword ? " has-eye" : ""}`.trim();
+
   return (
     <label className="field">
       <span>{label}</span>
-      <input {...props} />
+      <div className="field-wrap">
+        {icon && <span className="field-ic">{icon}</span>}
+        <input {...props} type={inputType} className={cls || undefined} />
+        {isPassword && (
+          <button
+            type="button"
+            className="field-eye"
+            onClick={() => setShow((s) => !s)}
+            aria-label={show ? "Hide password" : "Show password"}
+            tabIndex={-1}
+          >
+            {show ? <FiEyeOff /> : <FiEye />}
+          </button>
+        )}
+      </div>
     </label>
   );
 }

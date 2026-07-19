@@ -51,6 +51,10 @@ public class Question {
     @Column(name = "retry_of")
     private UUID retryOf;
 
+    /** If this question is an adaptive follow-up, the id of the question that prompted it. */
+    @Column(name = "follow_up_of")
+    private UUID followUpOf;
+
     public Question(int ordinal, String questionText) {
         this.ordinal = ordinal;
         this.questionText = questionText;

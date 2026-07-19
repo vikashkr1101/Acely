@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { FiUser, FiMail, FiLock } from "react-icons/fi";
 import { api } from "@/lib/api";
 import { useAuthAction } from "@/lib/useAuthAction";
 import { AuthShell, Field } from "@/components/auth/AuthShell";
@@ -20,9 +21,9 @@ export default function SignupPage() {
       altLabel="Log in"
     >
       <form onSubmit={(e) => run(e, () => api.signup(name, email, password))}>
-        <Field label="Name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required />
-        <Field label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required />
-        <Field label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" minLength={6} required />
+        <Field label="Name" icon={<FiUser />} value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required />
+        <Field label="Email" type="email" icon={<FiMail />} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required />
+        <Field label="Password" type="password" icon={<FiLock />} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" minLength={6} required />
         {error && <p className="auth-error">{error}</p>}
         <button className="btn auth-submit" type="submit" disabled={loading}>
           {loading ? "Creating…" : "Create account 🎉"}
