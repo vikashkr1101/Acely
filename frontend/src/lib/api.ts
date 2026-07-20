@@ -202,14 +202,23 @@ export interface ReportSummary {
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers ?? {}),
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers ?? {}),
+      },
+    });
+  } catch {
+    // fetch() throws a bare "Failed to fetch" on any network-level failure (server unreachable,
+    // timeout, cold-start). Give the user something actionable instead of the raw browser message.
+    const netErr = new Error("Couldn't reach the server — it may be waking up. Please try again in a few seconds.") as Error & { status?: number };
+    netErr.status = 0;
+    throw netErr;
+  }
 
   if (!res.ok) {
     let message = "Something went wrong. Please try again.";
