@@ -26,7 +26,7 @@ public class MailService {
 
     public MailService(ObjectProvider<JavaMailSender> mailSender,
                        @Value("${preppal.mail.enabled:false}") boolean enabled,
-                       @Value("${preppal.mail.from:PrepPal <no-reply@preppal.app>}") String from,
+                       @Value("${preppal.mail.from:Acely <no-reply@preppal.app>}") String from,
                        @Value("${preppal.app.base-url:http://localhost:3000}") String appBaseUrl,
                        @Value("${preppal.mail.reset-ttl-minutes:45}") int ttlMinutes) {
         this.mailSender = mailSender;
@@ -53,18 +53,18 @@ public class MailService {
         SimpleMailMessage msg = new SimpleMailMessage();
         msg.setTo(toEmail);
         msg.setFrom(from);
-        msg.setSubject("Reset your PrepPal password");
+        msg.setSubject("Reset your Acely password");
         msg.setText("""
                 Hi,
 
-                We got a request to reset your PrepPal password. Click the link below to set a new one —
+                We got a request to reset your Acely password. Click the link below to set a new one —
                 it expires in %d minutes and can be used once:
 
                 %s
 
                 If you didn't ask for this, you can safely ignore this email — your password won't change.
 
-                — PrepPal""".formatted(ttlMinutes, link));
+                — Acely""".formatted(ttlMinutes, link));
         try {
             sender.send(msg);
         } catch (Exception e) {

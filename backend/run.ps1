@@ -20,7 +20,7 @@ if (Test-Path .env) {
             Set-Item -Path "env:$name" -Value $value
         }
     }
-    Write-Host "Loaded .env - starting PrepPal backend on http://localhost:8080" -ForegroundColor Magenta
+    Write-Host "Loaded .env - starting Acely backend on http://localhost:8080" -ForegroundColor Magenta
 } else {
     Write-Host "No .env found - copy .env.example to .env and fill it in." -ForegroundColor Yellow
     exit 1

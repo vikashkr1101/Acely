@@ -19,9 +19,9 @@ export function AuthShell({ title, subtitle, altText, altHref, altLabel, childre
     <main className="auth-wrap">
       <div className="auth-card">
         <Link href="/" className="logo auth-logo">
-          <span className="mk">P</span>
+          <span className="mk">A</span>
           <span>
-            Prep<span className="grad-text">Pal</span>
+            Ace<span className="grad-text">ly</span>
           </span>
         </Link>
         <h1 className="auth-title">{title}</h1>

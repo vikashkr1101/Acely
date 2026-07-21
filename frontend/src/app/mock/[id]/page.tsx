@@ -154,7 +154,7 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
     const pct = scoring.total ? Math.round((scoring.current / scoring.total) * 100) : 0;
     return (
       <div className="iv iv-scroll">
-        <div className="iv-top"><span /><div className="iv-brand"><span className="mk">P</span>PrepPal</div><span /></div>
+        <div className="iv-top"><span /><div className="iv-brand"><span className="mk">A</span>Acely</div><span /></div>
         <div className="iv-ready">
           <div className="iv-scorering" style={{ ["--p" as string]: `${scoreDone ? 100 : pct}` }}><b>{scoreDone ? "✓" : `${pct}%`}</b></div>
           <h2>{scoreDone ? "Your report's ready 🎉" : `Scoring your ${isCheckpoint ? "readiness check" : "interview"}… 🧠`}</h2>
@@ -197,7 +197,7 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
   if (needNerves) {
     return (
       <div className="iv iv-scroll">
-        <div className="iv-top"><Link href="/dashboard" className="iv-exit">← Exit</Link><div className="iv-brand"><span className="mk">P</span>PrepPal</div><span /></div>
+        <div className="iv-top"><Link href="/dashboard" className="iv-exit">← Exit</Link><div className="iv-brand"><span className="mk">A</span>Acely</div><span /></div>
         <div className="iv-ready">
           <div className="iv-breathe">breathe<br />in… out…</div>
           <h2>{isCheckpoint ? "Your readiness check. Give it your best. 🧭" : isInterview ? "Your mock interview. Take a breath. 🌱" : "Take a breath. This is just practice. 🌱"}</h2>
@@ -357,7 +357,7 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
     <div className={`iv${showCoaching ? " iv-scroll" : ""}`}>
       <div className="iv-top">
         <Link href="/dashboard" className="iv-exit">← Exit</Link>
-        <div className="iv-brand"><span className="mk">P</span>PrepPal</div>
+        <div className="iv-brand"><span className="mk">A</span>Acely</div>
         <div className="iv-meta">
           <span className="iv-dots">{iv.questions.map((_, i) => <i key={i} className={i < idx ? "on" : i === idx ? "cur" : ""} />)}</span>
           <span className="iv-pill">{isVoice ? "🎤 Voice" : "⌨️ Text"} · Q{idx + 1} of {total}</span>

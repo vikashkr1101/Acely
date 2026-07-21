@@ -1,6 +1,6 @@
-# PrepPal — Architecture (v1, frozen)
+# Acely — Architecture (v1, frozen)
 
-This is the standing reference for how PrepPal is built. It's **frozen**: unless a
+This is the standing reference for how Acely is built. It's **frozen**: unless a
 decision creates a real technical problem, we implement against this — we don't
 re-open the architecture every time we add a feature. New ideas go through the
 plan (`.claude/plans/…`) and, if adopted, get folded in here.
@@ -11,7 +11,7 @@ plan (`.claude/plans/…`) and, if adopted, get folded in here.
 > call per answer, evidence-backed scores, no invented reference answers) it's
 > baked in below and already shipped.
 
-## What PrepPal is
+## What Acely is
 
 A **free** AI mock-interview app that makes **Indian freshers interview-ready** —
 practice, honest feedback, learning, progress. Positioning: *practice until you're
@@ -98,7 +98,7 @@ After a session completes, one grounded analysis call produces:
 - **Patterns we noticed** — cross-question habits a human interviewer would catch
   ("answers got vaguer as questions got harder", "structure stayed strong throughout"),
   from the per-question rubric dimensions + answer length + question order. This is
-  where PrepPal beats a single overall score.
+  where Acely beats a single overall score.
 
 The AI supplies the specifics **within our rules — it never decides alone.** A
 deterministic fallback covers the case where AI is down. The report and the

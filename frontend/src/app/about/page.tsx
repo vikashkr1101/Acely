@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export const metadata = {
   title: "About",
-  description: "Why PrepPal exists — free, honest, private interview practice for anyone.",
+  description: "Why Acely exists — free, honest, private interview practice for anyone.",
 };
 
 const PROMISES = [
@@ -29,8 +29,8 @@ export default function About() {
       <header className="nav">
         <div className="nav-inner">
           <Link href="/" className="logo">
-            <span className="mk">P</span>
-            <span>Prep<span className="grad-text">Pal</span></span>
+            <span className="mk">A</span>
+            <span>Ace<span className="grad-text">ly</span></span>
           </Link>
           <nav className="nav-links">
             <Link href="/">Home</Link>
@@ -43,10 +43,10 @@ export default function About() {
       <main className="wrap" style={{ maxWidth: 760, paddingTop: 48, paddingBottom: 64 }}>
         <span className="ey">💜 100% Free · Built by a solo developer</span>
         <h1 style={{ fontSize: 34, letterSpacing: "-0.02em", margin: "14px 0 18px" }}>
-          Why PrepPal exists
+          Why Acely exists
         </h1>
         <p style={{ fontSize: 16.5, color: "var(--muted)", lineHeight: 1.7, maxWidth: "62ch" }}>
-          I&apos;m a solo developer. I built PrepPal because I watched talented people fail interviews
+          I&apos;m a solo developer. I built Acely because I watched talented people fail interviews
           from nerves and not knowing what&apos;s actually asked — not from lacking the skill. It started
           with students and freshers, and it works just as well for anyone with an interview coming up.
           Free, honest, and calm.
@@ -86,7 +86,7 @@ export default function About() {
 
       <footer className="footer">
         Built with 💜 for anyone with an interview coming up ·{" "}
-        <span className="grad-text">PrepPal</span> © 2026
+        <span className="grad-text">Acely</span> © 2026
       </footer>
     </>
   );

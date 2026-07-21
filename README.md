@@ -1,4 +1,4 @@
-# PrepPal 🎓
+# Acely 🎓
 
 **The interview prep that kills the fear.** A free AI mock-interview & career-prep platform for students and freshers.
 

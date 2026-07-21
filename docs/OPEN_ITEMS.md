@@ -1,4 +1,4 @@
-# PrepPal — Open items sweep (2026-07-19)
+# Acely — Open items sweep (2026-07-19)
 
 A sweep of everything raised across our sessions, sorted by what needs a call vs. what's intentionally parked. Nothing here is a bug in shipped work — it's "did we drop something you meant to do."
 

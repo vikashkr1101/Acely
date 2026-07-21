@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   PrepPal design system — Bold & Playful
+   Acely design system — Bold & Playful
 --------------------------------------------------------------------------- */
 :root {
   /* ============================================================
@@ -1535,6 +1535,12 @@ h4 {
 }
 .iv-brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 15px; color: #fff; }
 .iv-brand .mk { width: 26px; height: 26px; border-radius: 8px; background: var(--grad); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; }
+/* brand mark = the Acely logo (replaces every gradient-letter tile with the real mark) */
+.logo .mk, .side-logo .mk, .mtop-logo .mk, .mockgen-brand .mk, .iv-brand .mk {
+  background: url("/logo.svg") center / cover no-repeat;
+  color: transparent;
+  font-size: 0;
+}
 .iv-top {
   flex-shrink: 0; position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between;
   padding: 16px 26px; max-width: 1120px; margin: 0 auto; width: 100%;

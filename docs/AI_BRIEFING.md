@@ -1,12 +1,12 @@
-# PrepPal — Current-State Briefing (for cross-review)
+# Acely — Current-State Briefing (for cross-review)
 
 > Paste this whole document to another AI to get an informed second opinion. It is self-contained:
-> it explains what PrepPal is, how the engine and scoring work (with the exact rubrics), the data
+> it explains what Acely is, how the engine and scoring work (with the exact rubrics), the data
 > model, and the honest known gaps. At the end is what we specifically want feedback on.
 
 ---
 
-## 1. What PrepPal is
+## 1. What Acely is
 
 A **free** AI mock-interview & interview-prep web app for **students and fresh graduates, mainly in
 India**, trying to land their first job. Built by a **solo developer** as both a real product and a

@@ -62,7 +62,7 @@ export default function AdminPage() {
       <AppShell>
         <div style={{ padding: 60, textAlign: "center" }}>
           <h2 style={{ fontSize: 22 }}>🔒 Admins only</h2>
-          <p style={{ color: "var(--muted)", marginTop: 8 }}>This page is restricted to PrepPal admins.</p>
+          <p style={{ color: "var(--muted)", marginTop: 8 }}>This page is restricted to Acely admins.</p>
         </div>
       </AppShell>
     );

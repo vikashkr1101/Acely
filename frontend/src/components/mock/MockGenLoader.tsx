@@ -19,7 +19,7 @@ export function MockGenLoader() {
 
   return (
     <div className="mockgen">
-      <div className="mockgen-brand"><span className="mk">P</span>PrepPal</div>
+      <div className="mockgen-brand"><span className="mk">A</span>Acely</div>
       <div className="mockgen-orb" />
       <h3>Preparing your interview…</h3>
       <p className="mockgen-step">{STEPS[step]} · <b>Step {step + 1} of {STEPS.length}</b></p>

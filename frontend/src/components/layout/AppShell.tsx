@@ -67,8 +67,8 @@ export function AppShell({ children, bleed = false }: { children: ReactNode; ble
       {/* ── Desktop sidebar ── */}
       <aside className="sidebar">
         <Link href="/dashboard" className="side-logo">
-          <span className="mk">P</span>
-          <span className="side-word">Prep<span className="grad-text">Pal</span></span>
+          <span className="mk">A</span>
+          <span className="side-word">Ace<span className="grad-text">ly</span></span>
         </Link>
 
         <nav className="side-nav">
@@ -119,8 +119,8 @@ export function AppShell({ children, bleed = false }: { children: ReactNode; ble
       {/* ── Mobile top bar: logo + name ── */}
       <header className="mtop">
         <Link href="/dashboard" className="mtop-logo">
-          <span className="mk">P</span>
-          <span>Prep<span className="grad-text">Pal</span></span>
+          <span className="mk">A</span>
+          <span>Ace<span className="grad-text">ly</span></span>
         </Link>
         <Link href="/profile" className="mtop-name">{user?.name ?? ""}</Link>
       </header>

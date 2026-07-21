@@ -1,6 +1,6 @@
-# PrepPal — New-User Experience (the "front door")
+# Acely — New-User Experience (the "front door")
 
-**The problem, in one line:** a stranger who opens PrepPal today lands in an app full of empty
+**The problem, in one line:** a stranger who opens Acely today lands in an app full of empty
 charts, with no story telling them *what this is, whether it's for them, or how to start.* We tuned
 a great engine; the doorway was missing.
 

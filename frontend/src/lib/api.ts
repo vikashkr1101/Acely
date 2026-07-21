@@ -1,4 +1,4 @@
-// Tiny API client for the PrepPal backend.
+// Tiny API client for the Acely backend.
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 

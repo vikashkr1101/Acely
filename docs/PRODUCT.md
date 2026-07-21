@@ -1,12 +1,12 @@
-# PrepPal — Product & Design Decisions
+# Acely — Product & Design Decisions
 
 > The living record of *what* we're building and *why*. Read this first when picking up the project.
 
 ## One-liner
-**PrepPal — "the interview prep that kills the fear."** A **free** AI mock-interview & career-prep platform for **students and freshers** (India-first).
+**Acely — "the interview prep that kills the fear."** A **free** AI mock-interview & career-prep platform for **students and freshers** (India-first).
 
 ## The core insight (our positioning)
-For freshers, the enemy isn't lack of knowledge — it's **fear**. PrepPal is built, end to end, to **reduce interview anxiety** through safe, repeated AI practice. That fear-reduction angle is our differentiator; nobody else leads with it.
+For freshers, the enemy isn't lack of knowledge — it's **fear**. Acely is built, end to end, to **reduce interview anxiety** through safe, repeated AI practice. That fear-reduction angle is our differentiator; nobody else leads with it.
 
 ## Target users
 Students and freshers preparing for placements / first jobs. Nervous, budget-conscious, mobile-heavy. Design must feel **friendly, encouraging, supportive** — not intimidating or "corporate."

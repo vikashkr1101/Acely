@@ -53,7 +53,7 @@ export default function FeedbackPage() {
           </div>
         ) : (
           <>
-            <PageHeader eyebrow="We're listening" title="Tell us what you think 💜" subtitle="PrepPal is built by one developer, for you. Every bit of feedback shapes what comes next — good, bad, or a wild idea." />
+            <PageHeader eyebrow="We're listening" title="Tell us what you think 💜" subtitle="Acely is built by one developer, for you. Every bit of feedback shapes what comes next — good, bad, or a wild idea." />
             <div style={{ background: "var(--card)", border: "1px solid var(--line)", borderRadius: 18, boxShadow: "var(--sh)", padding: "26px 28px" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
               <div>

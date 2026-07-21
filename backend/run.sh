@@ -16,5 +16,5 @@ set +a
 
 export JAVA_HOME="${JAVA_HOME:-/c/Program Files/Eclipse Adoptium/jdk-21.0.11.10-hotspot}"
 
-echo "Loaded .env - starting PrepPal backend on http://localhost:8080"
+echo "Loaded .env - starting Acely backend on http://localhost:8080"
 ./mvnw spring-boot:run

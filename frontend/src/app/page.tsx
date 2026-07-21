@@ -8,9 +8,9 @@ export default function Home() {
       <header className="nav">
         <div className="nav-inner">
           <Link href="/" className="logo">
-            <span className="mk">P</span>
+            <span className="mk">A</span>
             <span>
-              Prep<span className="grad-text">Pal</span>
+              Ace<span className="grad-text">ly</span>
             </span>
           </Link>
           <nav className="nav-links">
@@ -87,7 +87,7 @@ export default function Home() {
         {/* OUTCOME STRIP + TRY */}
         <section id="try" className="tryband">
           <span className="tt">🎤 Realistic mocks → 🎯 Honest feedback → 📈 True readiness</span>
-          <h3>Answer one question. See how PrepPal coaches you.</h3>
+          <h3>Answer one question. See how Acely coaches you.</h3>
           <div className="try">
             <div className="lab">Sample · Frontend Developer</div>
             <div className="qq">
@@ -132,7 +132,7 @@ export default function Home() {
 
       <footer className="footer">
         Built with 💜 for anyone with an interview coming up ·{" "}
-        <Link href="/about" className="grad-text">About</Link> · PrepPal © 2026
+        <Link href="/about" className="grad-text">About</Link> · Acely © 2026
       </footer>
     </>
   );

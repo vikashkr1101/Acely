@@ -48,7 +48,7 @@ preppal:
     # When false (default), password-reset emails are NOT sent — the link is logged instead (dev-safe).
     # Set MAIL_ENABLED=true + spring.mail.* in prod to actually send.
     enabled: ${MAIL_ENABLED:false}
-    from: ${MAIL_FROM:PrepPal <no-reply@preppal.app>}
+    from: ${MAIL_FROM:Acely <no-reply@preppal.app>}
     reset-ttl-minutes: ${RESET_TTL_MINUTES:45}
   jwt:
     # 256-bit secret (override in prod!). Base64 or plain long string.

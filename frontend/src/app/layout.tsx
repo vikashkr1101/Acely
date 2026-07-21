@@ -10,8 +10,8 @@ const jakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: "PrepPal — Practice until you're interview-ready",
-    template: "%s · PrepPal",
+    default: "Acely — Practice until you're interview-ready",
+    template: "%s · Acely",
   },
   description:
     "Free, private AI mock interviews that get you interview-ready — honest feedback, a real readiness score, and a clear next step every time.",

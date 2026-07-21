@@ -1,4 +1,4 @@
-# PrepPal — Frontend Design Audit (2026-07-19)
+# Acely — Frontend Design Audit (2026-07-19)
 
 A close, systematic pass over the whole frontend (three parallel audits: colour/tokens, typography/spacing, component-states/responsive/a11y), deduplicated and prioritized. File refs are under `frontend/`.
 

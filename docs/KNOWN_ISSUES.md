@@ -1,4 +1,4 @@
-# PrepPal — Known Issues & Backlog
+# Acely — Known Issues & Backlog
 
 A running list so nothing slips, and so we don't re-introduce fixed bugs.
 Status: 🔧 fixing now · 📌 open (fix during the journey) · ⏳ deferred (later phase) · ✅ fixed
