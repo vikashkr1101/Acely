@@ -10,7 +10,7 @@ import { TRACKS, STACKS } from "@/lib/interview";
 
 const field = { fontSize: 12.5, fontWeight: 700, color: "var(--muted)", marginBottom: 8 } as const;
 
-export default function SettingsPage() {
+export default function ProfilePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
@@ -43,14 +43,14 @@ export default function SettingsPage() {
     }
   }
 
-  if (loading) return <AppShell><Loader label="Loading settings…" /></AppShell>;
+  if (loading) return <AppShell><Loader label="Loading profile…" /></AppShell>;
 
   const card = { background: "var(--card)", border: "1px solid var(--line)", borderRadius: 16, boxShadow: "var(--sh)", padding: "22px 24px" } as const;
 
   return (
     <AppShell>
       <div style={{ maxWidth: 720 }}>
-        <PageHeader eyebrow="Settings" title="Your profile" subtitle="Your name, and the benchmark track your Readiness Checks measure against." />
+        <PageHeader eyebrow="Profile" title="Your profile" subtitle="Your name, and the benchmark track your Readiness Checks measure against." />
 
         <div style={{ ...card, display: "flex", flexDirection: "column", gap: 20 }}>
           <div>

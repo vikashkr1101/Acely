@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { FiGrid, FiMic, FiClipboard, FiCompass, FiBarChart2, FiBookOpen, FiMessageSquare, FiSettings, FiLogOut, FiMoreVertical } from "react-icons/fi";
+import { FiGrid, FiMic, FiClipboard, FiCompass, FiBarChart2, FiBookOpen, FiMessageSquare, FiUser, FiLogOut, FiMoreVertical } from "react-icons/fi";
 import { api, clearToken, getToken, type User } from "@/lib/api";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
@@ -88,8 +88,8 @@ export function AppShell({ children, bleed = false }: { children: ReactNode; ble
         </div>
 
         <div className="side-user" data-acct-menu>
-          <Link href="/settings" className="side-avatar" aria-label="Settings" title="Settings">{user?.name?.[0]?.toUpperCase() ?? "…"}</Link>
-          <Link href="/settings" className="side-name side-word">{user?.name ?? ""}</Link>
+          <Link href="/profile" className="side-avatar" aria-label="Profile" title="Profile">{user?.name?.[0]?.toUpperCase() ?? "…"}</Link>
+          <Link href="/profile" className="side-name side-word">{user?.name ?? ""}</Link>
           <button
             className={`side-kebab${menuOpen ? " on" : ""}`}
             onClick={() => setMenuOpen((o) => !o)}
@@ -104,8 +104,8 @@ export function AppShell({ children, bleed = false }: { children: ReactNode; ble
           {menuOpen && (
             <div className="side-menu" role="menu">
               <ThemeToggle className="side-mi" showLabel />
-              <Link href="/settings" className="side-mi" role="menuitem" onClick={() => setMenuOpen(false)}>
-                <span className="mic"><FiSettings /></span> Settings
+              <Link href="/profile" className="side-mi" role="menuitem" onClick={() => setMenuOpen(false)}>
+                <span className="mic"><FiUser /></span> Profile
               </Link>
               <div className="side-msep" />
               <button className="side-mi danger" role="menuitem" onClick={logout}>
@@ -122,7 +122,7 @@ export function AppShell({ children, bleed = false }: { children: ReactNode; ble
           <span className="mk">P</span>
           <span>Prep<span className="grad-text">Pal</span></span>
         </Link>
-        <Link href="/settings" className="mtop-name">{user?.name ?? ""}</Link>
+        <Link href="/profile" className="mtop-name">{user?.name ?? ""}</Link>
       </header>
 
       <main className={`app-main${bleed ? " bleed" : ""}`}>
@@ -155,8 +155,8 @@ export function AppShell({ children, bleed = false }: { children: ReactNode; ble
             ))}
             <div className="side-msep" />
             <ThemeToggle className="side-mi" showLabel />
-            <Link href="/settings" className="side-mi" role="menuitem" onClick={() => setMenuOpen(false)}>
-              <span className="mic"><FiSettings /></span> Settings
+            <Link href="/profile" className="side-mi" role="menuitem" onClick={() => setMenuOpen(false)}>
+              <span className="mic"><FiUser /></span> Profile
             </Link>
             <button className="side-mi danger" role="menuitem" onClick={logout}>
               <span className="mic"><FiLogOut /></span> Sign out
