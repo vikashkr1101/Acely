@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { FiGrid, FiMic, FiClipboard, FiCompass, FiBarChart2, FiBookOpen, FiMessageSquare, FiUser, FiLogOut, FiMoreVertical } from "react-icons/fi";
 import { api, clearToken, getToken, type User } from "@/lib/api";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { BrandLockup } from "@/components/brand/BrandLockup";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", short: "Dashboard", Icon: FiGrid, match: (p: string) => p === "/dashboard" },
@@ -66,9 +67,8 @@ export function AppShell({ children, bleed = false }: { children: ReactNode; ble
     <div className="app-shell">
       {/* ── Desktop sidebar ── */}
       <aside className="sidebar">
-        <Link href="/dashboard" className="side-logo">
-          <span className="mk">A</span>
-          <span className="side-word">Ace<span className="grad-text">ly</span></span>
+        <Link href="/dashboard" className="side-brand" aria-label="Acely — Dashboard">
+          <BrandLockup />
         </Link>
 
         <nav className="side-nav">

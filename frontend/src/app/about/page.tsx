@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandLockup } from "@/components/brand/BrandLockup";
 
 export const metadata = {
   title: "About",
@@ -18,8 +19,8 @@ const PROMISES = [
   },
   {
     icon: "💜",
-    title: "Free, and staying free",
-    body: "Built on free infrastructure so you can practise as much as you need, without a paywall or a card.",
+    title: "Free, and built to stay accessible",
+    body: "No paywall, no card. Built lean so real interview practice stays within reach for the students who need it most.",
   },
 ];
 
@@ -41,6 +42,7 @@ export default function About() {
       </header>
 
       <main className="wrap" style={{ maxWidth: 760, paddingTop: 48, paddingBottom: 64 }}>
+        <BrandLockup className="about-brand" />
         <span className="ey">💜 100% Free · Built by a solo developer</span>
         <h1 style={{ fontSize: 34, letterSpacing: "-0.02em", margin: "14px 0 18px" }}>
           Why Acely exists

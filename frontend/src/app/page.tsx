@@ -40,6 +40,9 @@ export default function Home() {
               from your first job to your next one. Honest feedback, an honest
               readiness benchmark, and a clear next step every time.
             </p>
+            <p style={{ margin: "14px 0 2px", fontSize: 15.5, fontWeight: 800, letterSpacing: "-0.01em" }}>
+              Practice trains. <span className="grad-text">Readiness measures.</span>
+            </p>
             <div className="cta">
               <Link href="/signup" className="btn">
                 🎤 Start a free mock →
@@ -78,7 +81,7 @@ export default function Home() {
             <div className="rl">
               <span>● Listening — take your time</span>
               <span>
-                Readiness <b>82</b>
+                Readiness <b>70</b>
               </span>
             </div>
           </div>
@@ -87,16 +90,16 @@ export default function Home() {
         {/* OUTCOME STRIP + TRY */}
         <section id="try" className="tryband">
           <span className="tt">🎤 Realistic mocks → 🎯 Honest feedback → 📈 True readiness</span>
-          <h3>Answer one question. See how Acely coaches you.</h3>
+          <h3>A real Acely question. Get a feel for it — then sign up to run a full mock with honest feedback.</h3>
           <div className="try">
             <div className="lab">Sample · Frontend Developer</div>
             <div className="qq">
               What&apos;s the difference between props and state in React?
             </div>
-            <textarea rows={3} placeholder="Type a line here — then sign up to get instant AI feedback…" />
+            <textarea rows={3} placeholder="Jot a quick answer to get the feel…" />
             <div className="row">
               <span style={{ fontSize: 12.5, color: "var(--muted)" }}>
-                ✨ Free forever — no card needed
+                ✨ Free — no card needed
               </span>
               <Link href="/signup" className="btn sm">
                 Sign up to get feedback →
@@ -131,7 +134,10 @@ export default function Home() {
       </main>
 
       <footer className="footer">
-        Built with 💜 for anyone with an interview coming up ·{" "}
+        <span style={{ display: "block", maxWidth: "58ch", margin: "0 auto 10px", lineHeight: 1.6 }}>
+          Built in public by a solo developer — because honest interview feedback
+          shouldn&apos;t cost more than a student can afford.
+        </span>
         <Link href="/about" className="grad-text">About</Link> · Acely © 2026
       </footer>
     </>

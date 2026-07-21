@@ -139,6 +139,68 @@ h4 {
   background-clip: text;
   color: transparent;
 }
+
+/* full brand lockup: logo + wordmark + tagline on a self-contained dark plate.
+   Always-dark (like an app-icon badge) so it reads in both light & dark themes. */
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px 11px 12px;
+  border-radius: 16px;
+  background: radial-gradient(135% 130% at 12% 6%, #2a1e57 0%, #150d34 44%, #0c0722 100%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 8px 22px -14px rgba(0, 0, 0, 0.75);
+  text-decoration: none;
+}
+.bl-mark {
+  width: 46px;
+  height: 46px;
+  flex: none;
+  background: url("/logo-mark.svg") center / contain no-repeat;
+}
+.bl-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.02;
+  min-width: 0;
+}
+.bl-word {
+  font-size: 25px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+.bl-tag {
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 3px;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.66);
+}
+.bl-tag .grad-text {
+  font-weight: 800;
+}
+
+/* sidebar: plate stretches to the rail width */
+.side-brand {
+  display: block;
+  margin-bottom: 8px;
+  text-decoration: none;
+}
+.side-brand .brand-lockup {
+  width: 100%;
+}
+/* auth: centered above the form */
+.auth-brand {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+/* about: left-aligned brand moment above the hero copy */
+.about-brand {
+  margin-bottom: 22px;
+}
 .wrap {
   max-width: var(--maxw);
   margin: 0 auto;
@@ -218,7 +280,7 @@ h4 {
   align-items: center;
   gap: 9px;
   font-weight: 900;
-  font-size: 18px;
+  font-size: 22px;
 }
 .logo .mk {
   width: 30px;

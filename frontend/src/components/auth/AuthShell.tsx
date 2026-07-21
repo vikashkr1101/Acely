@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, type InputHTMLAttributes, type ReactNode } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import { BrandLockup } from "@/components/brand/BrandLockup";
 
 interface AuthShellProps {
   title: string;
@@ -18,11 +19,8 @@ export function AuthShell({ title, subtitle, altText, altHref, altLabel, childre
   return (
     <main className="auth-wrap">
       <div className="auth-card">
-        <Link href="/" className="logo auth-logo">
-          <span className="mk">A</span>
-          <span>
-            Ace<span className="grad-text">ly</span>
-          </span>
+        <Link href="/" className="auth-brand" aria-label="Acely — home">
+          <BrandLockup />
         </Link>
         <h1 className="auth-title">{title}</h1>
         <p className="auth-sub">{subtitle}</p>
