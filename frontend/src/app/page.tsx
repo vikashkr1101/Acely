@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export default function Home() {
   return (
-    <>
+    <div className="lp" data-theme="dark">
       {/* NAV */}
       <header className="nav">
         <div className="nav-inner">
@@ -14,11 +13,9 @@ export default function Home() {
             </span>
           </Link>
           <nav className="nav-links">
-            <a href="#try">Try it</a>
             <a href="#features">Features</a>
             <Link href="/about">About</Link>
             <Link href="/login">Log in</Link>
-            <ThemeToggle className="nav-theme" />
           </nav>
           <Link href="/signup" className="btn sm">
             Sign up free
@@ -140,6 +137,6 @@ export default function Home() {
         </span>
         <Link href="/about" className="grad-text">About</Link> · Acely © 2026
       </footer>
-    </>
+    </div>
   );
 }

@@ -49,6 +49,7 @@
   --faint: #a2a6bd;
   --line: #e7e9f3;
   --card: #ffffff;
+  --nav-bg: rgba(255, 255, 255, 0.82);
   --ok: #22c55e;
   --amber: #f59e0b;
   --grad-soft: linear-gradient(120deg, var(--soft), var(--soft2));
@@ -60,7 +61,7 @@
 
 /* ── Dark theme — toggled via [data-theme="dark"] on <html> (sessionStorage, resets each session).
    Flips NEUTRAL tokens only; the brand gradient + green/amber/red score colours hold. ── */
-:root[data-theme="dark"] {
+:root[data-theme="dark"], [data-theme="dark"] {
   --bg: #14121c;
   --bg2: #191725;
   --ink: #f3f0ff;
@@ -69,6 +70,7 @@
   --faint: #8b85b5;
   --line: #2a2740;
   --card: #1c1930;
+  --nav-bg: rgba(18, 16, 26, 0.72);
   --soft: #2a1633;
   --soft2: #331722;
   --side-bg: #17152a;
@@ -100,6 +102,7 @@ html {
 }
 body {
   margin: 0;
+  overscroll-behavior-y: none;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-sans);
@@ -258,11 +261,15 @@ h4 {
 }
 
 /* navbar */
+.lp {
+  background: var(--bg);
+  min-height: 100dvh;
+}
 .nav {
   position: sticky;
   top: 0;
   z-index: 40;
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--nav-bg);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--line);
 }
@@ -424,7 +431,7 @@ h4 {
 
 /* try band (L3) */
 .tryband {
-  background: var(--ink);
+  background: #17142a;
   color: #fff;
   border-radius: 24px;
   padding: 30px;
