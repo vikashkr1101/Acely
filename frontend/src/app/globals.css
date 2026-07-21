@@ -777,6 +777,21 @@ h4 {
 .ct-tip b { color: inherit; font-weight: 800; }
 .ct-tip::before { content: ""; position: absolute; left: 14px; top: -6px; width: 11px; height: 11px; background: var(--ink); transform: rotate(45deg); }
 
+/* Tailor your questions — General / My stack / From a JD */
+.tl-seg { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 9px; }
+.tl-seg.two { grid-template-columns: 1fr 1fr; }
+.tl-opt { border: 2px solid var(--line); background: var(--card); border-radius: 12px; padding: 10px 8px; cursor: pointer; text-align: center; font-family: inherit; transition: border-color 0.15s, background 0.15s; }
+.tl-opt:hover { border-color: #e3b7ec; }
+.tl-opt.active { border-color: var(--brand); background: var(--soft); }
+.tl-opt .ic { font-size: 17px; line-height: 1; display: block; margin-bottom: 4px; }
+.tl-opt b { font-size: 13px; display: block; color: var(--ink); }
+.tl-opt em { font-style: normal; font-size: 10.5px; color: var(--muted); display: block; margin-top: 1px; line-height: 1.25; }
+.tl-panel { margin-top: 11px; border: 1px dashed var(--line); border-radius: 12px; padding: 13px; background: var(--bg2); }
+.tl-note { font-size: 12px; color: var(--muted); line-height: 1.5; margin: 10px 0 0; }
+.tl-note b { color: var(--ink-soft); }
+.sa-readi { margin-top: 12px; background: var(--soft); border: 1px solid var(--line); border-radius: 11px; padding: 11px 13px; font-size: 12px; color: var(--ink-soft); line-height: 1.5; }
+.sa-readi b { color: var(--brandink); }
+
 .level-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .level-pill { font-size: 13px; font-weight: 700; padding: 9px 15px; border-radius: 999px; background: var(--card); border: 1.5px solid var(--line); color: var(--muted); cursor: pointer; font-family: inherit; transition: border-color 0.15s, color 0.15s, background 0.15s; }
 .level-pill:hover { border-color: #e3b7ec; color: var(--ink); }

@@ -2,10 +2,13 @@
 
 import { useState, useEffect, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { api, type InterviewType, type ExperienceLevel, type Difficulty, type CompanyType } from "@/lib/api";
+import { api, type InterviewType, type ExperienceLevel, type Difficulty, type CompanyType, type InterviewTrack } from "@/lib/api";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MockGenLoader } from "@/components/mock/MockGenLoader";
+import { stackChips, trackLabel } from "@/lib/interview";
+
+type Tailor = "general" | "stack" | "jd";
 
 const TYPES: { key: InterviewType; icon: string; label: string; desc: string }[] = [
   { key: "HR", icon: "💼", label: "HR", desc: "Motivation & fit" },
@@ -35,6 +38,8 @@ const COMPANIES: { key: CompanyType; label: string }[] = [
 const JD_STARTERS: { label: string; jd: string }[] = [
   { label: "Standard SDE-1", jd: "Software Engineer (SDE-1). Build and maintain features across the stack, write clean and tested code, collaborate on design and code reviews, and debug production issues. Strong fundamentals in data structures, algorithms, OOP and databases; familiarity with a modern language (Java/Python/JavaScript), Git and REST APIs. Good communication and eagerness to learn." },
   { label: "Frontend (React)", jd: "Frontend Developer. Build responsive, accessible user interfaces with React and TypeScript, integrate REST/GraphQL APIs, and ensure performance across devices. Solid HTML/CSS, state management, component design and testing; understanding of web fundamentals, browser rendering and Git-based workflows." },
+  { label: "Backend (Java)", jd: "Backend Engineer (Java). Design and build RESTful services with Java and Spring Boot over a relational database (PostgreSQL/MySQL). Strong OOP, data structures, SQL and API design; experience with JPA/Hibernate, testing (JUnit), and secure, scalable service architecture. Good grasp of caching, transactions and system design basics." },
+  { label: "Full-Stack (MERN)", jd: "Full-Stack Developer (MERN). Build end-to-end features with React on the front and Node.js/Express + MongoDB on the back. Comfortable with REST APIs, authentication (JWT), state management, and deploying to the cloud. Solid JavaScript/TypeScript fundamentals, Git workflows and an eye for clean, testable code." },
   { label: "Data Analyst", jd: "Data Analyst. Turn raw data into insight — write SQL queries, build dashboards, clean and analyse datasets, and present findings to stakeholders. Comfortable with SQL, spreadsheets and a BI tool (Power BI/Tableau); basic statistics and Python/pandas a plus; strong communication and attention to detail." },
 ];
 
@@ -84,6 +89,10 @@ export function MockSetup({ scoringMode }: { scoringMode: "PRACTICE" | "INTERVIE
   const [tipOpen, setTipOpen] = useState(false);
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
+  // Tailor: how to personalise the technical questions — general, my stack, or from a JD.
+  const [tailor, setTailor] = useState<Tailor>("general");
+  const [stack, setStack] = useState("");
+  const [track, setTrack] = useState<InterviewTrack | null>(null);
 
   // Adaptive auto-ramp: once you're scoring well, Hard is the default (you can switch back).
   useEffect(() => {
@@ -92,8 +101,24 @@ export function MockSetup({ scoringMode }: { scoringMode: "PRACTICE" | "INTERVIE
     }).catch(() => {});
   }, []);
 
+  // Prefill the stack from the saved profile (their benchmark), and default to "My stack" if they have one.
+  useEffect(() => {
+    api.me().then((u) => {
+      if (u.primaryTrack) setTrack(u.primaryTrack);
+      if (u.primaryStack) { setStack(u.primaryStack); setTailor("stack"); }
+    }).catch(() => {});
+  }, []);
+
   const typeLabel = TYPES.find((t) => t.key === type)?.label;
   const levelLabel = LEVELS.find((l) => l.key === level)?.label;
+
+  // Stack only applies to Technical/Project (and the mixed interview, which includes them).
+  const stackAllowed = mixed || type === "TECHNICAL" || type === "PROJECT";
+  // HR is role-agnostic → no tailoring. Everything else gets the Tailor (Behavioral: general + JD only).
+  const showTailor = mixed || type !== "HR";
+  // If "My stack" is picked where it doesn't apply (e.g. Behavioral), fall back to general.
+  const effTailor: Tailor = tailor === "stack" && !stackAllowed ? "general" : tailor;
+  const chips = stackChips(track);
 
   function goNext() {
     if (!role.trim()) {
@@ -109,7 +134,12 @@ export function MockSetup({ scoringMode }: { scoringMode: "PRACTICE" | "INTERVIE
     setError("");
     setCreating(true);
     try {
-      const mock = await api.createInterview({ role, jd, count, mode, interviewType: type, experienceLevel: level, difficulty, scoringMode, companyType: company });
+      const mock = await api.createInterview({
+        role,
+        jd: effTailor === "jd" ? jd : "",
+        stack: effTailor === "stack" && stack.trim() ? stack.trim() : undefined,
+        count, mode, interviewType: type, experienceLevel: level, difficulty, scoringMode, companyType: company,
+      });
       router.push(`/mock/${mock.id}`);
     } catch (err) {
       const status = (err as { status?: number })?.status;
@@ -190,20 +220,60 @@ export function MockSetup({ scoringMode }: { scoringMode: "PRACTICE" | "INTERVIE
               <h1 className="wiz-h">A few details ⚙️</h1>
               <p className="wiz-sub">{role || "Your role"} · {mixed ? "Mixed interview" : typeLabel} · {levelLabel}</p>
 
-              <div className="field">
-                <span>Job description <em>(optional — makes questions sharper)</em></span>
-                <div className="level-row" style={{ marginBottom: 10 }}>
-                  {JD_STARTERS.map((s) => (
-                    <button type="button" key={s.label} className="level-pill" onClick={() => setJd(s.jd)}>＋ {s.label}</button>
-                  ))}
+              {showTailor ? (
+                <div className="field">
+                  <span>Tailor your questions <em>— pick one</em></span>
+                  <div className={`tl-seg${stackAllowed ? "" : " two"}`}>
+                    <button type="button" className={`tl-opt${effTailor === "general" ? " active" : ""}`} onClick={() => setTailor("general")}>
+                      <span className="ic">🎯</span><b>General</b><em>Role fundamentals</em>
+                    </button>
+                    {stackAllowed && (
+                      <button type="button" className={`tl-opt${effTailor === "stack" ? " active" : ""}`} onClick={() => setTailor("stack")}>
+                        <span className="ic">🧩</span><b>My stack</b><em>Tech-specific</em>
+                      </button>
+                    )}
+                    <button type="button" className={`tl-opt${effTailor === "jd" ? " active" : ""}`} onClick={() => setTailor("jd")}>
+                      <span className="ic">📋</span><b>From a JD</b><em>A real job post</em>
+                    </button>
+                  </div>
+
+                  {effTailor === "general" && (
+                    <div className="tl-panel"><p className="tl-note">Broad, role-level fundamentals — no specific stack needed. Good if you don&apos;t have one in mind.</p></div>
+                  )}
+                  {effTailor === "stack" && (
+                    <div className="tl-panel">
+                      <div className="level-row" style={{ marginBottom: 10 }}>
+                        {chips.map((s) => (
+                          <button type="button" key={s} className={`level-pill${stack === s ? " active" : ""}`} onClick={() => setStack(s)}>{s}</button>
+                        ))}
+                      </div>
+                      <input value={stack} onChange={(e) => setStack(e.target.value)} placeholder="…or type any stack — e.g. Kotlin, Rails, FastAPI, Rust" />
+                      <p className="tl-note">Suggestions adapt to your <b>{trackLabel(track)}</b> track — or type any stack. Defaults to your saved one.</p>
+                    </div>
+                  )}
+                  {effTailor === "jd" && (
+                    <div className="tl-panel">
+                      <div className="level-row" style={{ marginBottom: 10 }}>
+                        {JD_STARTERS.map((s) => (
+                          <button type="button" key={s.label} className="level-pill" onClick={() => setJd(s.jd)}>＋ {s.label}</button>
+                        ))}
+                      </div>
+                      <textarea rows={3} value={jd} onChange={(e) => setJd(e.target.value)} placeholder="Paste a job description, or tap a starter above…" />
+                      <p className="tl-note">We pull the tech straight from the JD — <b>no need to pick a stack</b>.</p>
+                    </div>
+                  )}
+
+                  <div className="wiz-mixnote" style={{ marginTop: 12 }}>
+                    {mixed
+                      ? <>💡 Your interview opens with <b>“Tell me about yourself”</b> — an easy warm-up before the real questions.</>
+                      : <>💡 We ease in gently — answer at your own pace, and retry any answer to improve.</>}
+                  </div>
                 </div>
-                <textarea rows={3} value={jd} onChange={(e) => setJd(e.target.value)} placeholder="Paste a JD, or tap a starter above…" />
-                <div className="wiz-mixnote" style={{ marginTop: 10 }}>
-                  {mixed
-                    ? <>💡 Your interview opens with <b>“Tell me about yourself”</b> — an easy warm-up before the real questions.</>
-                    : <>💡 We ease in gently — answer at your own pace, and retry any answer to improve.</>}
+              ) : (
+                <div className="field">
+                  <div className="wiz-mixnote">🙂 <b>HR</b> questions are the same for everyone — no stack or JD needed here.</div>
                 </div>
-              </div>
+              )}
 
               <label className="field">
                 <span>Number of questions{mixed ? <em> (across all sections)</em> : ""}</span>
@@ -276,6 +346,9 @@ export function MockSetup({ scoringMode }: { scoringMode: "PRACTICE" | "INTERVIE
             </ol>
             {step === 2 && (
               <div className="sa-pick">Your pick: <b>{role || "—"}</b> · {mixed ? "Mixed" : typeLabel} · {levelLabel}{difficulty === "HARD" ? " · Hard" : ""}</div>
+            )}
+            {step === 2 && showTailor && (
+              <div className="sa-readi">📏 Your readiness is always benchmarked to your <b>{trackLabel(track)}</b> track — tailoring changes the questions, not your score.</div>
             )}
             <div className="sa-note">🔒 No camera, no recording — just you and the questions.</div>
           </aside>

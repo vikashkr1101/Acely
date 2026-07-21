@@ -45,3 +45,9 @@ export const STACKS: Partial<Record<InterviewTrack, string[]>> = {
   DEVOPS: ["AWS", "Docker / K8s", "Azure", "Other"],
 };
 export const trackLabel = (t: InterviewTrack | null | undefined) => TRACKS.find((x) => x.key === t)?.label ?? "General";
+
+// Quick-pick stack chips, role/track-dependent — with a mixed fallback for a general/unknown track.
+// "Other" is dropped: free-text input now covers any stack.
+const STACK_FALLBACK = ["Java / Spring", "MERN", "Python", "React", "SQL"];
+export const stackChips = (t: InterviewTrack | null | undefined): string[] =>
+  (t && STACKS[t] ? STACKS[t]! : STACK_FALLBACK).filter((s) => s !== "Other");

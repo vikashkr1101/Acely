@@ -115,9 +115,13 @@ public class InterviewService {
         if (checkpoint) {
             genHint = trackHint + (companyGuidance.isBlank() ? "" : " " + companyGuidance);
         } else {
+            // Precedence JD > stack > general: the client sends a stack ONLY in "My stack" mode (and a JD
+            // only in "From a JD" mode), so simply honouring whatever's present gives the right behaviour.
+            // This is a per-session stack (not the profile benchmark) — stamp it on the session, not the user.
             StringBuilder h = new StringBuilder();
-            String stack = user.getPrimaryStack();
+            String stack = req.stack();
             if (stack != null && !stack.isBlank()) {
+                session.setStack(stack.trim());
                 h.append("The candidate is preparing with the ").append(stack.trim())
                  .append(" stack — where it fits the section, tailor the TECHNICAL and PROJECT questions to it. ");
             }
