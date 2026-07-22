@@ -8,13 +8,39 @@ const jakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
+const DESC =
+  "Free, private AI mock interviews that get you interview-ready — honest feedback, a real readiness score, and a clear next step every time.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://acely.in"),
   title: {
     default: "Acely — Practice until you're interview-ready",
     template: "%s · Acely",
   },
-  description:
-    "Free, private AI mock interviews that get you interview-ready — honest feedback, a real readiness score, and a clear next step every time.",
+  description: DESC,
+  applicationName: "Acely",
+  keywords: [
+    "AI mock interview",
+    "mock interview for freshers",
+    "interview practice for students",
+    "technical interview practice",
+    "HR interview questions",
+    "behavioral interview practice",
+    "free interview preparation",
+  ],
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    url: "https://acely.in",
+    siteName: "Acely",
+    title: "Acely — Practice until you're interview-ready",
+    description: DESC,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Acely — Practice until you're interview-ready",
+    description: DESC,
+  },
 };
 
 export default function RootLayout({
