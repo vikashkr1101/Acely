@@ -18,6 +18,7 @@ interface AuthShellProps {
 export function AuthShell({ title, subtitle, altText, altHref, altLabel, children }: AuthShellProps) {
   return (
     <main className="auth-wrap">
+      <Link href="/" className="auth-home">← Home</Link>
       <div className="auth-card">
         <Link href="/" className="auth-brand" aria-label="Acely — home">
           <BrandLockup />
