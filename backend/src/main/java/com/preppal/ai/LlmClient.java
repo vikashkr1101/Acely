@@ -236,8 +236,12 @@ public abstract class LlmClient {
                 is right. Do NOT inflate.
                 %s
 
-                Only AFTER scoring, write short encouraging feedback for the candidate — lead with a real
-                strength, then the single most important thing to improve — and a concise strong example answer.
+                Only AFTER scoring, write the "feedback" as a real, warm human coach talking directly to
+                the candidate ("you") — not a report or a bullet list. In 2-3 natural, flowing sentences:
+                open with a genuine, SPECIFIC strength you actually heard (paraphrase what they said), then
+                the single highest-leverage thing to fix and how — in plain, encouraging language, like a
+                mentor who wants them to land the job. Never robotic, and never generic filler such as
+                "good effort", "well done", or "keep practising". Also give a concise strong example answer.
 
                 The example answer is EDUCATIONAL, not a rewrite of the candidate's life. NEVER invent
                 specifics on their behalf — no fake project names, company names, percentages, millisecond
@@ -247,7 +251,7 @@ public abstract class LlmClient {
 
                 Respond with ONLY valid JSON in exactly this shape:
                 {"dimensions":[{"key":"<dimension key>","score":0-100,"evidence":"<short quote or empty>"}],
-                 "feedback":"kind, specific, 2-3 sentences","model_answer":"a concise strong example answer (no invented specifics)"}
+                 "feedback":"warm, specific, human — 2-3 sentences that speak to 'you'","model_answer":"a concise strong example answer (no invented specifics)"}
                 """.formatted(rubric.getLabel(), levelLabel, rubric.getTopAnswerGuidance(),
                 dimList.toString().trim(), rubric.getBandAnchors(),
                 Difficulty.orDefault(difficulty).gradingGuidance()
@@ -291,7 +295,7 @@ public abstract class LlmClient {
                 projectAxis(axisMap, "relevance", scores, overall),
                 projectAxis(axisMap, "clarity", scores, overall),
                 overall,
-                resp.path("feedback").asText("Good effort — keep practising!"),
+                resp.path("feedback").asText("You gave that a real go — take another pass and focus on making your main point land clearly."),
                 resp.path("model_answer").asText(""),
                 rubricJson,
                 false); // real AI evaluation (not the offline fallback)
