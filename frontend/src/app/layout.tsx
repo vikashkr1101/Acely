@@ -14,7 +14,7 @@ const DESC =
 export const metadata: Metadata = {
   metadataBase: new URL("https://acely.in"),
   title: {
-    default: "Acely — Practice until you're interview-ready",
+    default: "Acely — Free AI Mock Interviews for Students & Freshers",
     template: "%s · Acely",
   },
   description: DESC,
@@ -33,14 +33,26 @@ export const metadata: Metadata = {
     type: "website",
     url: "https://acely.in",
     siteName: "Acely",
-    title: "Acely — Practice until you're interview-ready",
+    title: "Acely — Practice. Improve. Ace it.",
     description: DESC,
   },
   twitter: {
     card: "summary_large_image",
-    title: "Acely — Practice until you're interview-ready",
+    title: "Acely — Practice. Improve. Ace it.",
     description: DESC,
   },
+};
+
+// Structured data — tells Google this is a free web software product (richer results).
+const JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Acely",
+  applicationCategory: "EducationalApplication",
+  operatingSystem: "Web",
+  url: "https://acely.in",
+  description: DESC,
+  offers: { "@type": "Offer", price: "0", priceCurrency: "INR" },
 };
 
 export default function RootLayout({
@@ -49,6 +61,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${jakarta.variable} antialiased`} suppressHydrationWarning>
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+        />
         <script
           dangerouslySetInnerHTML={{
             __html:
