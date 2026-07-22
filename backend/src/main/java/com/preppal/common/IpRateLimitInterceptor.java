@@ -2,8 +2,6 @@ package com.preppal.common;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.time.Instant;
@@ -11,16 +9,20 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Per-IP hourly limit for anonymous, abuse-prone endpoints (password-reset requests) — stops a single
- * source from spamming reset emails at someone. In-memory fixed hourly window; fine for one instance.
+ * Per-IP hourly limit for anonymous, abuse-prone endpoints (signup / login / password-reset /
+ * resend-code) — stops a single source from flooding them. In-memory fixed hourly window; fine for
+ * one instance. Instantiated (not a @Component) so each endpoint group can carry its own limit.
  */
-@Component
 public class IpRateLimitInterceptor implements HandlerInterceptor {
 
-    @Value("${preppal.ratelimit.forgot-per-hour:6}")
-    private int maxPerHour;
-
+    private final int maxPerHour;
+    private final String message;
     private final Map<String, Counter> counters = new ConcurrentHashMap<>();
+
+    public IpRateLimitInterceptor(int maxPerHour, String message) {
+        this.maxPerHour = maxPerHour;
+        this.message = message;
+    }
 
     private static final class Counter {
         long window;
@@ -37,7 +39,7 @@ public class IpRateLimitInterceptor implements HandlerInterceptor {
             if (c.count > maxPerHour) {
                 res.setStatus(429); // Too Many Requests
                 res.setContentType("application/json");
-                res.getWriter().write("{\"message\":\"Too many reset requests — please try again later.\"}");
+                res.getWriter().write("{\"message\":\"" + message + "\"}");
                 return false;
             }
         }

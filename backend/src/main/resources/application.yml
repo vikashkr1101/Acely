@@ -92,8 +92,10 @@ preppal:
   ratelimit:
     # Max requests per user per minute to /api/interviews/** (guards free-tier AI quota).
     per-minute: ${RATE_LIMIT_PER_MINUTE:40}
-    # Max password-reset requests per IP per hour (stops reset-email spam at a user).
+    # Max email-sending requests (forgot-password / resend-code) per IP per hour — protects the mail quota.
     forgot-per-hour: ${FORGOT_PER_HOUR:6}
+    # Max signup+login attempts per IP per hour. Lenient for shared campus/carrier IPs; stops floods.
+    auth-per-hour: ${AUTH_PER_HOUR:30}
 
 logging:
   level:
