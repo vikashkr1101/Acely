@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export default function Home() {
   return (
-    <div className="lp" data-theme="dark">
+    <div className="lp">
       {/* NAV */}
       <header className="nav">
         <div className="nav-inner">
@@ -16,6 +17,7 @@ export default function Home() {
             <a href="#features">Features</a>
             <Link href="/about">About</Link>
             <Link href="/login">Log in</Link>
+            <ThemeToggle className="nav-theme" />
           </nav>
           <Link href="/signup" className="btn sm">
             Sign up free
