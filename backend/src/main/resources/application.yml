@@ -85,7 +85,8 @@ preppal:
     monthly-mocks: ${FREE_MONTHLY_MOCKS:20}   # free mocks per user per month
   admin:
     # Comma-separated emails allowed to reach /api/admin/** (server-enforced, case-insensitive).
-    emails: ${ADMIN_EMAILS:vikash1128kumar@gmail.com}
+    # No default in code — set ADMIN_EMAILS in the environment. Empty = nobody is admin (fails closed).
+    emails: ${ADMIN_EMAILS:}
   ratelimit:
     # Max requests per user per minute to /api/interviews/** (guards free-tier AI quota).
     per-minute: ${RATE_LIMIT_PER_MINUTE:40}

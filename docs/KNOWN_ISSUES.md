@@ -37,7 +37,7 @@ Status: 🔧 fixing now · 📌 open (fix during the journey) · ⏳ deferred (l
 - **Checkpoints show "Standardized," not "🔥 Hard"** (report + PDF) — fair-comparison framing; users accept honest scores better when it's "the standard test."
 
 ## ✅ Added — admin cockpit + retention prune (2026-07-19)
-- **Email-gated admin** at `/admin` (frontend) → `GET /api/admin/insights`. Gating is **server-enforced**: `/api/admin/**` returns 403 unless the user's email is in `ADMIN_EMAILS` (default `vikash1128kumar@gmail.com`, comma-separated, case-insensitive) — not just a hidden link.
+- **Email-gated admin** at `/admin` (frontend) → `GET /api/admin/insights`. Gating is **server-enforced**: `/api/admin/**` returns 403 unless the user's email is in `ADMIN_EMAILS` (set in the environment, comma-separated, case-insensitive; no default in code) — not just a hidden link.
 - **Insights:** users + new/active-7d, mocks + 7d, completion rate, avg readiness (measurements-only), offline-estimated rate, weekly signups, AI provider health (calls / success% / fallbacks from `ai_usage` — no token field exists), practice mix by type, top roles, `ai_usage` size + oldest row.
 - **Retention prune:** nightly `@Scheduled` job (03:30) deletes `ai_usage` rows > 60 days + a manual "Prune now" button (`POST /api/admin/prune-ai-usage`). `@EnableScheduling` added.
 
