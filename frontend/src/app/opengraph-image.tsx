@@ -1,10 +1,16 @@
+import { readFileSync } from "fs";
+import { join } from "path";
 import { ImageResponse } from "next/og";
 
 export const alt = "Acely — free AI mock interviews";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// Generated branded social card so shares (WhatsApp/LinkedIn/Twitter) show Acely, not a fallback icon.
+// Embed the real Acely mark (A + swoosh + spark) so shares carry the actual brand, not a plain letter.
+const LOGO_DATA_URI = `data:image/svg+xml;base64,${readFileSync(
+  join(process.cwd(), "public", "logo-mark.svg")
+).toString("base64")}`;
+
 export default function Image() {
   return new ImageResponse(
     (
@@ -21,23 +27,10 @@ export default function Image() {
           fontFamily: "sans-serif",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 44 }}>
-          <div
-            style={{
-              width: 96,
-              height: 96,
-              borderRadius: 26,
-              background: "linear-gradient(135deg,#f97316,#d946ef 55%,#7c3aed)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 62,
-              fontWeight: 900,
-            }}
-          >
-            A
-          </div>
-          <div style={{ fontSize: 66, fontWeight: 900, letterSpacing: -2 }}>Acely</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 26, marginBottom: 46 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={LOGO_DATA_URI} width={124} height={124} alt="" />
+          <div style={{ fontSize: 74, fontWeight: 900, letterSpacing: -2 }}>Acely</div>
         </div>
         <div style={{ display: "flex", fontSize: 60, fontWeight: 800, lineHeight: 1.1, maxWidth: 960 }}>
           Practice until you&apos;re interview-ready.
