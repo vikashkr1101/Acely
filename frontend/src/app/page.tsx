@@ -16,7 +16,7 @@ export default function Home() {
           <nav className="nav-links">
             <a href="#features">Features</a>
             <Link href="/about">About</Link>
-            <Link href="/login">Log in</Link>
+            <Link href="/login" className="nav-login">Log in</Link>
             <ThemeToggle className="nav-theme" />
           </nav>
           <Link href="/signup" className="btn sm">
@@ -29,7 +29,7 @@ export default function Home() {
         {/* HERO */}
         <section className="hero">
           <div>
-            <span className="ey">💜 100% Free · Built by a solo developer</span>
+            <span className="ey">💜 Free · Built by a solo developer</span>
             <h1>
               Practice until you&apos;re interview-ready.{" "}
               <span className="grad-text">Confidence follows.</span>

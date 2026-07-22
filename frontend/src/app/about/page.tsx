@@ -43,7 +43,7 @@ export default function About() {
 
       <main className="wrap" style={{ maxWidth: 760, paddingTop: 48, paddingBottom: 64 }}>
         <BrandLockup className="about-brand" />
-        <span className="ey">💜 100% Free · Built by a solo developer</span>
+        <span className="ey">💜 Free · Built by a solo developer</span>
         <h1 style={{ fontSize: 34, letterSpacing: "-0.02em", margin: "14px 0 18px" }}>
           Why Acely exists
         </h1>

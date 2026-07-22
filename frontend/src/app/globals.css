@@ -304,6 +304,7 @@ h4 {
 }
 .nav-links {
   display: flex;
+  align-items: center;
   gap: 18px;
   color: var(--muted);
   font-size: 14px;
@@ -311,6 +312,14 @@ h4 {
 }
 .nav-links a:hover {
   color: var(--ink);
+}
+/* Log in stands out from the plain nav links (Sign up is the filled button). */
+.nav-links .nav-login {
+  color: var(--brand);
+  font-weight: 800;
+}
+.nav-links .nav-login:hover {
+  color: var(--brandink);
 }
 @media (max-width: 720px) {
   .nav-links {
