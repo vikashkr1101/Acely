@@ -26,6 +26,11 @@ export interface AuthResponse {
   token: string;
   user: User;
 }
+/** Signup no longer returns a token — the account starts unverified and must confirm a code first. */
+export interface SignupResponse {
+  email: string;
+  verificationRequired: boolean;
+}
 
 export type InterviewType = "HR" | "TECHNICAL" | "BEHAVIORAL" | "PROJECT";
 export type InterviewTrack = "BACKEND" | "FRONTEND" | "FULLSTACK" | "DATA" | "QA" | "DEVOPS" | "GENERAL";
@@ -241,7 +246,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 export const api = {
   signup: (name: string, email: string, password: string) =>
-    request<AuthResponse>("/api/auth/signup", {
+    request<SignupResponse>("/api/auth/signup", {
       method: "POST",
       body: JSON.stringify({ name, email, password }),
     }),
@@ -250,6 +255,20 @@ export const api = {
     request<AuthResponse>("/api/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
+    }),
+
+  // Exchange the emailed 6-digit code for a real session.
+  verifyEmail: (email: string, code: string) =>
+    request<AuthResponse>("/api/auth/verify-email", {
+      method: "POST",
+      body: JSON.stringify({ email, code }),
+    }),
+
+  // Resend a verification code to an unverified account.
+  resendCode: (email: string) =>
+    request<void>("/api/auth/resend-code", {
+      method: "POST",
+      body: JSON.stringify({ email }),
     }),
 
   forgotPassword: (email: string) =>

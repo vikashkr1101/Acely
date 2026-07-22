@@ -3,6 +3,7 @@ package com.preppal.auth;
 import com.preppal.auth.dto.AuthResponse;
 import com.preppal.auth.dto.LoginRequest;
 import com.preppal.auth.dto.SignupRequest;
+import com.preppal.auth.dto.SignupResponse;
 import com.preppal.auth.dto.UpdateProfileRequest;
 import com.preppal.auth.dto.UserDto;
 import com.preppal.security.JwtService;
@@ -35,13 +36,19 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final PasswordResetTokenRepository resetTokens;
+    private final EmailVerificationRepository emailVerifications;
     private final MailService mailService;
 
     @Value("${preppal.mail.reset-ttl-minutes:45}")
     private int resetTtlMinutes;
 
+    @Value("${preppal.mail.verify-ttl-minutes:10}")
+    private int verifyTtlMinutes;
+
+    private static final int MAX_VERIFY_ATTEMPTS = 5;
+
     @Transactional
-    public AuthResponse signup(SignupRequest req) {
+    public SignupResponse signup(SignupRequest req) {
         String email = req.email().toLowerCase().trim();
         if (users.existsByEmail(email)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "That email is already registered — try logging in.");
@@ -50,12 +57,13 @@ public class AuthService {
                 .name(req.name().trim())
                 .email(email)
                 .passwordHash(passwordEncoder.encode(req.password()))
-                .build();
+                .build();  // emailVerified defaults false — no JWT is issued until the code is confirmed
         users.save(user);
-        return new AuthResponse(jwtService.generate(user), UserDto.from(user));
+        issueVerificationCode(user);
+        return new SignupResponse(email, true);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse login(LoginRequest req) {
         String email = req.email().toLowerCase().trim();
         User user = users.findByEmail(email)
@@ -63,7 +71,54 @@ public class AuthService {
         if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password.");
         }
+        if (!user.isEmailVerified()) {
+            // Hard gate: send a fresh code and route the frontend to the verify screen (403).
+            issueVerificationCode(user);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Please verify your email — we just sent you a fresh code.");
+        }
         return new AuthResponse(jwtService.generate(user), UserDto.from(user));
+    }
+
+    /** Exchange a valid 6-digit code for a real session. Wrong codes count against a small attempt cap. */
+    @Transactional
+    public AuthResponse verifyEmail(String rawEmail, String rawCode) {
+        String email = rawEmail.toLowerCase().trim();
+        String code = rawCode.trim();
+        User user = users.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "That code is invalid or expired — tap resend for a new one."));
+        if (user.isEmailVerified()) {
+            return new AuthResponse(jwtService.generate(user), UserDto.from(user)); // already verified — just sign in
+        }
+        EmailVerification ev = emailVerifications.findByUserId(user.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "That code is invalid or expired — tap resend for a new one."));
+        if (ev.getExpiresAt().isBefore(Instant.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "That code has expired — tap resend for a new one.");
+        }
+        if (ev.getAttempts() >= MAX_VERIFY_ATTEMPTS) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Too many wrong attempts — tap resend for a new code.");
+        }
+        if (!ev.getCodeHash().equals(sha256(code))) {
+            ev.setAttempts(ev.getAttempts() + 1);
+            emailVerifications.save(ev);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "That code isn't right — check it and try again.");
+        }
+        user.setEmailVerified(true);
+        users.save(user);
+        emailVerifications.delete(ev);
+        return new AuthResponse(jwtService.generate(user), UserDto.from(user));
+    }
+
+    /** Send a fresh code to an unverified account. Silent about whether the email exists or is already verified. */
+    @Transactional
+    public void resendCode(String rawEmail) {
+        String email = rawEmail.toLowerCase().trim();
+        users.findByEmail(email).ifPresent(user -> {
+            if (!user.isEmailVerified()) issueVerificationCode(user);
+        });
     }
 
     /** Update the signed-in user's profile — name, benchmark track, and stack. */
@@ -115,6 +170,22 @@ public class AuthService {
         token.setUsed(true);
         resetTokens.save(token);
         return new AuthResponse(jwtService.generate(user), UserDto.from(user));
+    }
+
+    /** Upsert the user's single live verification code (one row per user) and email it. */
+    private void issueVerificationCode(User user) {
+        String code = generateCode();
+        EmailVerification ev = emailVerifications.findByUserId(user.getId()).orElseGet(EmailVerification::new);
+        ev.setUserId(user.getId());
+        ev.setCodeHash(sha256(code));
+        ev.setExpiresAt(Instant.now().plus(verifyTtlMinutes, ChronoUnit.MINUTES));
+        ev.setAttempts(0);
+        emailVerifications.save(ev);
+        mailService.sendVerificationCode(user.getEmail(), code);
+    }
+
+    private static String generateCode() {
+        return String.format("%06d", RANDOM.nextInt(1_000_000));
     }
 
     private static String generateToken() {

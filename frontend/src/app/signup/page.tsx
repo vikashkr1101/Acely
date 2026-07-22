@@ -7,7 +7,7 @@ import { useAuthAction } from "@/lib/useAuthAction";
 import { AuthShell, Field } from "@/components/auth/AuthShell";
 
 export default function SignupPage() {
-  const { run, error, loading } = useAuthAction();
+  const { submit, error, loading, router } = useAuthAction();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,7 +20,14 @@ export default function SignupPage() {
       altHref="/login"
       altLabel="Log in"
     >
-      <form onSubmit={(e) => run(e, () => api.signup(name, email, password))}>
+      <form
+        onSubmit={(e) =>
+          submit(e, async () => {
+            await api.signup(name, email, password);
+            router.push(`/verify?email=${encodeURIComponent(email.trim().toLowerCase())}`);
+          })
+        }
+      >
         <Field label="Name" icon={<FiUser />} value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required />
         <Field label="Email" type="email" icon={<FiMail />} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required />
         <Field label="Password" type="password" icon={<FiLock />} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" minLength={6} required />

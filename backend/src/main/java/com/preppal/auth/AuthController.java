@@ -3,10 +3,13 @@ package com.preppal.auth;
 import com.preppal.auth.dto.AuthResponse;
 import com.preppal.auth.dto.ForgotPasswordRequest;
 import com.preppal.auth.dto.LoginRequest;
+import com.preppal.auth.dto.ResendCodeRequest;
 import com.preppal.auth.dto.ResetPasswordRequest;
 import com.preppal.auth.dto.SignupRequest;
+import com.preppal.auth.dto.SignupResponse;
 import com.preppal.auth.dto.UpdateProfileRequest;
 import com.preppal.auth.dto.UserDto;
+import com.preppal.auth.dto.VerifyEmailRequest;
 import com.preppal.user.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,13 +25,26 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/signup")
-    public AuthResponse signup(@Valid @RequestBody SignupRequest request) {
+    public SignupResponse signup(@Valid @RequestBody SignupRequest request) {
         return authService.signup(request);
     }
 
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
+    }
+
+    /** Exchange the emailed 6-digit code for a session; signs the user in on success. */
+    @PostMapping("/verify-email")
+    public AuthResponse verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
+        return authService.verifyEmail(request.email(), request.code());
+    }
+
+    /** Resend a verification code to an unverified account. Always 200 (never reveals account state). */
+    @PostMapping("/resend-code")
+    @ResponseStatus(HttpStatus.OK)
+    public void resendCode(@Valid @RequestBody ResendCodeRequest request) {
+        authService.resendCode(request.email());
     }
 
     /** Request a reset link. Always returns 200 — we never reveal whether the email is registered. */

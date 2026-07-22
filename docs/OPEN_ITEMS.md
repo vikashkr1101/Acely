@@ -8,6 +8,7 @@ A sweep of everything raised across our sessions, sorted by what needs a call vs
 2. **A real Settings page.** The domain feature says a track is "changeable in Settings," but there is **no Settings page** — track is only changeable via the "Change" link on the Readiness Check setup. A small `/settings` (change track/stack, maybe display name, sign out, delete account) would make that copy true.
 3. **Generate JD from skills.** You chose Pick-a-starter + Paste for v1 and parked this. Still a clean add whenever (prompt + endpoint + editable preview).
 4. **More Prep-tips guides.** You said "add later": **aptitude round**, **group discussion**, **"walk me through your resume"**, **post-interview email/thank-you**. Easy content adds to `/prep`.
+12. **Practice: let the user choose scoring timing (added 2026-07-22 — discuss).** Today Practice scores as-you-go and Mock Interview batches at the end. Idea: in *Practice* setup, let the user pick — **inline** (score + Next after each answer) vs **batch** (answer everything, then score). Low cost since the inline/batch machinery already exists for the two modes; the watch-out is it blurs the Practice-vs-Interview line, so it needs a design call before building.
 
 ## B. Deliberately replaced/folded (noting so they're not "forgotten")
 

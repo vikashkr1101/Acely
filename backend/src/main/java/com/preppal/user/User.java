@@ -33,6 +33,11 @@ public class User {
     @Column(nullable = false)
     private String plan = "FREE";   // FREE | PRO
 
+    /** Whether the user has confirmed their email via the signup verification code. */
+    @Builder.Default
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified = false;
+
     /** Primary interview TRACK (the readiness benchmark) + STACK (question personalization). */
     @Enumerated(EnumType.STRING)
     @Column(name = "primary_track")

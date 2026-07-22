@@ -586,6 +586,18 @@ h4 {
 .auth-home:hover {
   color: var(--ink);
 }
+.auth-forgot {
+  text-align: right;
+  margin: -4px 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.auth-forgot a {
+  color: var(--brand);
+}
+.auth-forgot a:hover {
+  color: var(--brandink);
+}
 .auth-card {
   width: 100%;
   max-width: 400px;

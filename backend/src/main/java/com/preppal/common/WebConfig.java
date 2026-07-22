@@ -16,6 +16,6 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(rateLimit).addPathPatterns("/api/interviews/**");
-        registry.addInterceptor(ipRateLimit).addPathPatterns("/api/auth/forgot-password");
+        registry.addInterceptor(ipRateLimit).addPathPatterns("/api/auth/forgot-password", "/api/auth/resend-code");
     }
 }

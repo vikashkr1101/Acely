@@ -23,17 +23,54 @@ public class MailService {
     private final String from;
     private final String appBaseUrl;
     private final int ttlMinutes;
+    private final int verifyTtlMinutes;
 
     public MailService(ObjectProvider<JavaMailSender> mailSender,
                        @Value("${preppal.mail.enabled:false}") boolean enabled,
                        @Value("${preppal.mail.from:Acely <no-reply@preppal.app>}") String from,
                        @Value("${preppal.app.base-url:http://localhost:3000}") String appBaseUrl,
-                       @Value("${preppal.mail.reset-ttl-minutes:45}") int ttlMinutes) {
+                       @Value("${preppal.mail.reset-ttl-minutes:45}") int ttlMinutes,
+                       @Value("${preppal.mail.verify-ttl-minutes:10}") int verifyTtlMinutes) {
         this.mailSender = mailSender;
         this.enabled = enabled;
         this.from = from;
         this.appBaseUrl = appBaseUrl;
         this.ttlMinutes = ttlMinutes;
+        this.verifyTtlMinutes = verifyTtlMinutes;
+    }
+
+    /** Emails the 6-digit signup verification code. Logs it instead when mail is disabled (dev-safe). */
+    public void sendVerificationCode(String toEmail, String code) {
+        if (!enabled) {
+            log.warn("[mail disabled] Email-verification code for {} → {}", toEmail, code);
+            return;
+        }
+        JavaMailSender sender = mailSender.getIfAvailable();
+        if (sender == null) {
+            log.error("preppal.mail.enabled=true but no JavaMailSender is configured (set spring.mail.*). "
+                    + "Verification code for {} → {}", toEmail, code);
+            return;
+        }
+        SimpleMailMessage msg = new SimpleMailMessage();
+        msg.setTo(toEmail);
+        msg.setFrom(from);
+        msg.setSubject("Your Acely verification code: " + code);
+        msg.setText("""
+                Hi,
+
+                Welcome to Acely! Enter this code to verify your email and start practising —
+                it expires in %d minutes:
+
+                    %s
+
+                If you didn't create an Acely account, you can safely ignore this email.
+
+                — Acely""".formatted(verifyTtlMinutes, code));
+        try {
+            sender.send(msg);
+        } catch (Exception e) {
+            log.error("Failed to send verification email to {}", toEmail, e);
+        }
     }
 
     public void sendPasswordReset(String toEmail, String rawToken) {
