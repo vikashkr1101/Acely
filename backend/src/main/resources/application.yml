@@ -45,10 +45,12 @@ preppal:
     # Public URL of the frontend — used to build password-reset links.
     base-url: ${APP_BASE_URL:http://localhost:3000}
   mail:
-    # When false (default), password-reset emails are NOT sent — the link is logged instead (dev-safe).
-    # Set MAIL_ENABLED=true + spring.mail.* in prod to actually send.
+    # Transactional email via Brevo's HTTP API (verification codes + password resets). We use the
+    # API — not SMTP — because Render's free tier blocks outbound SMTP ports. When disabled or the
+    # API key is unset (local dev), the code/link is logged instead of sent (dev-safe).
     enabled: ${MAIL_ENABLED:false}
-    from: ${MAIL_FROM:Acely <no-reply@preppal.app>}
+    brevo-api-key: ${BREVO_API_KEY:}
+    from: ${MAIL_FROM:Acely <no-reply@acely.in>}
     reset-ttl-minutes: ${RESET_TTL_MINUTES:45}
   jwt:
     # 256-bit secret (override in prod!). Base64 or plain long string.
