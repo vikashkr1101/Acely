@@ -263,6 +263,7 @@ h4 {
 /* navbar */
 .lp {
   background: var(--bg);
+  color: var(--ink);
   min-height: 100dvh;
 }
 .nav {
