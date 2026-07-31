@@ -7,6 +7,15 @@ spring:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/preppal}
     username: ${DATABASE_USER:preppal}
     password: ${DATABASE_PASSWORD:preppal}
+    hikari:
+      # Let idle connections drop so Neon's serverless compute can auto-suspend. A warm backend that
+      # holds a pool of open connections keeps Neon awake 24/7 and burns the free monthly compute-hours.
+      # Trade-off: the first query after a suspend wakes Neon (~1-2s) — fine for a free-tier app.
+      minimum-idle: 0
+      maximum-pool-size: 5
+      idle-timeout: 30000        # close idle connections after 30s
+      keepalive-time: 0          # no keepalive pings that would keep Neon awake
+      max-lifetime: 1800000      # recycle connections every 30 min
 
   jpa:
     hibernate:
