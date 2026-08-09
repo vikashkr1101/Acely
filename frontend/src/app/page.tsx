@@ -31,20 +31,20 @@ export default function Home() {
           <div>
             <span className="ey">💜 Free · Built by a solo developer</span>
             <h1>
-              Practice until you&apos;re interview-ready.{" "}
-              <span className="grad-text">Confidence follows.</span>
+              Practice makes you feel ready.{" "}
+              <span className="grad-text">Acely tells you if you are.</span>
             </h1>
             <p className="lede">
-              Free, private AI mock interviews that get you interview-ready —
-              from your first job to your next one. Honest feedback, an honest
-              readiness benchmark, and a clear next step every time.
+              Any AI can run a mock interview. Acely gives you what they can&apos;t —
+              a standardized, one-shot readiness score you can&apos;t game. So you
+              walk in knowing, not hoping.
             </p>
             <p style={{ margin: "14px 0 2px", fontSize: 15.5, fontWeight: 800, letterSpacing: "-0.01em" }}>
               Practice trains. <span className="grad-text">Readiness measures.</span>
             </p>
             <div className="cta">
               <Link href="/signup" className="btn">
-                🎤 Start a free mock →
+                🧭 Take your Readiness Check →
               </Link>
               <Link href="/about" className="btn o">
                 How it works

@@ -37,7 +37,7 @@ function standingHeadline(v: number | null) {
   if (v >= 85) return "You're interview-ready — go and get it.";
   if (v >= 70) return "You're close — a little more depth and you're there.";
   if (v >= 50) return "A solid base to build on.";
-  return "Early days — but every rep makes you sharper.";
+  return "Early days. Your weak spots below are exactly where to start.";
 }
 
 const CalendarIcon = () => (
