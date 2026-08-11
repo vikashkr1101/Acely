@@ -192,9 +192,12 @@ export function ReportView({ report, userName = "" }: { report: Report; userName
       {/* header */}
       <div className="rpv-top">
         <span className="rpv-eyebrow">{report.checkpoint ? "🧭 Readiness Check — where you stand" : "Mock Interview Report"}</span>
-        <button className="rpv-dl" onClick={handleDownload} disabled={downloading}>
-          <DownloadIcon /> {downloading ? "Preparing…" : "Download PDF"}
-        </button>
+        {/* PDF download hidden for launch until the PDF template is polished. Flip false -> true to restore. */}
+        {false && (
+          <button className="rpv-dl" onClick={handleDownload} disabled={downloading}>
+            <DownloadIcon /> {downloading ? "Preparing…" : "Download PDF"}
+          </button>
+        )}
       </div>
       <h1 className="rpv-title">{report.checkpoint ? (report.track ? `${report.track} Readiness Assessment` : "Here’s where you stand") : "Here’s how your practice went"}</h1>
       <div className="rpv-meta">
