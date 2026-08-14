@@ -36,7 +36,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final PasswordResetTokenRepository resetTokens;
-    private final EmailVerificationRepository emailVerifications;
+    private final PendingSignupRepository pendingSignups;
     private final MailService mailService;
 
     @Value("${preppal.mail.reset-ttl-minutes:45}")
@@ -53,72 +53,79 @@ public class AuthService {
         if (users.existsByEmail(email)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "That email is already registered — try logging in.");
         }
-        User user = User.builder()
-                .name(req.name().trim())
-                .email(email)
-                .passwordHash(passwordEncoder.encode(req.password()))
-                .build();  // emailVerified defaults false — no JWT is issued until the code is confirmed
-        users.save(user);
-        issueVerificationCode(user);
+        // No user row yet: hold the signup in pending_signup until the code is confirmed. Re-signing up
+        // with the same unverified email refreshes this row, so the latest attempt's password wins.
+        PendingSignup ps = pendingSignups.findById(email).orElseGet(PendingSignup::new);
+        ps.setEmail(email);
+        ps.setName(req.name().trim());
+        ps.setPasswordHash(passwordEncoder.encode(req.password()));
+        issuePendingCode(ps);
         return new SignupResponse(email, true);
     }
 
     @Transactional
     public AuthResponse login(LoginRequest req) {
         String email = req.email().toLowerCase().trim();
-        User user = users.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password."));
-        if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
+        User user = users.findByEmail(email).orElse(null);
+        if (user == null) {
+            // No verified account. Maybe they started signing up but never confirmed the code — if the
+            // password matches the pending signup, resend a fresh code and route them to verify (403)
+            // rather than a dead "invalid credentials".
+            PendingSignup ps = pendingSignups.findById(email).orElse(null);
+            if (ps != null && passwordEncoder.matches(req.password(), ps.getPasswordHash())) {
+                issuePendingCode(ps);
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "Please verify your email — we just sent you a fresh code.");
+            }
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password.");
         }
-        if (!user.isEmailVerified()) {
-            // Hard gate: send a fresh code and route the frontend to the verify screen (403).
-            issueVerificationCode(user);
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Please verify your email — we just sent you a fresh code.");
+        if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password.");
         }
         return new AuthResponse(jwtService.generate(user), UserDto.from(user));
     }
 
-    /** Exchange a valid 6-digit code for a real session. Wrong codes count against a small attempt cap. */
+    /** Exchange a valid 6-digit code for a real account + session. Wrong codes count against a small cap. */
     @Transactional
     public AuthResponse verifyEmail(String rawEmail, String rawCode) {
         String email = rawEmail.toLowerCase().trim();
         String code = rawCode.trim();
-        User user = users.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "That code is invalid or expired — tap resend for a new one."));
-        if (user.isEmailVerified()) {
-            return new AuthResponse(jwtService.generate(user), UserDto.from(user)); // already verified — just sign in
+        if (users.existsByEmail(email)) {
+            // Already a real, verified account — never hand out a session here without credentials.
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This email is already verified — please log in.");
         }
-        EmailVerification ev = emailVerifications.findByUserId(user.getId())
+        PendingSignup ps = pendingSignups.findById(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "That code is invalid or expired — tap resend for a new one."));
-        if (ev.getExpiresAt().isBefore(Instant.now())) {
+        if (ps.getExpiresAt().isBefore(Instant.now())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "That code has expired — tap resend for a new one.");
         }
-        if (ev.getAttempts() >= MAX_VERIFY_ATTEMPTS) {
+        if (ps.getAttempts() >= MAX_VERIFY_ATTEMPTS) {
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
                     "Too many wrong attempts — tap resend for a new code.");
         }
-        if (!ev.getCodeHash().equals(sha256(code))) {
-            ev.setAttempts(ev.getAttempts() + 1);
-            emailVerifications.save(ev);
+        if (!ps.getCodeHash().equals(sha256(code))) {
+            ps.setAttempts(ps.getAttempts() + 1);
+            pendingSignups.save(ps);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "That code isn't right — check it and try again.");
         }
-        user.setEmailVerified(true);
+        // Success → the account becomes real and verified; the pending row is consumed.
+        User user = User.builder()
+                .name(ps.getName())
+                .email(email)
+                .passwordHash(ps.getPasswordHash())
+                .emailVerified(true)
+                .build();
         users.save(user);
-        emailVerifications.delete(ev);
+        pendingSignups.deleteById(email);
         return new AuthResponse(jwtService.generate(user), UserDto.from(user));
     }
 
-    /** Send a fresh code to an unverified account. Silent about whether the email exists or is already verified. */
+    /** Resend a fresh code to a pending signup. Silent about whether a pending signup exists. */
     @Transactional
     public void resendCode(String rawEmail) {
         String email = rawEmail.toLowerCase().trim();
-        users.findByEmail(email).ifPresent(user -> {
-            if (!user.isEmailVerified()) issueVerificationCode(user);
-        });
+        pendingSignups.findById(email).ifPresent(this::issuePendingCode);
     }
 
     /** Update the signed-in user's profile — name, benchmark track, and stack. */
@@ -172,16 +179,14 @@ public class AuthService {
         return new AuthResponse(jwtService.generate(user), UserDto.from(user));
     }
 
-    /** Upsert the user's single live verification code (one row per user) and email it. */
-    private void issueVerificationCode(User user) {
+    /** Stamp a fresh code (+ TTL, reset attempts) on a pending signup, persist it, and email the code. */
+    private void issuePendingCode(PendingSignup ps) {
         String code = generateCode();
-        EmailVerification ev = emailVerifications.findByUserId(user.getId()).orElseGet(EmailVerification::new);
-        ev.setUserId(user.getId());
-        ev.setCodeHash(sha256(code));
-        ev.setExpiresAt(Instant.now().plus(verifyTtlMinutes, ChronoUnit.MINUTES));
-        ev.setAttempts(0);
-        emailVerifications.save(ev);
-        mailService.sendVerificationCode(user.getEmail(), code);
+        ps.setCodeHash(sha256(code));
+        ps.setExpiresAt(Instant.now().plus(verifyTtlMinutes, ChronoUnit.MINUTES));
+        ps.setAttempts(0);
+        pendingSignups.save(ps);
+        mailService.sendVerificationCode(ps.getEmail(), code);
     }
 
     private static String generateCode() {
