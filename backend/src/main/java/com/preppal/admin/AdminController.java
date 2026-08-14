@@ -40,6 +40,12 @@ public class AdminController {
         return admin.insights();
     }
 
+    @GetMapping("/users")
+    public java.util.List<AdminUserRow> users(@AuthenticationPrincipal User user) {
+        requireAdmin(user);
+        return admin.users();
+    }
+
     @GetMapping("/feedback")
     public AdminFeedbackDto feedback(@AuthenticationPrincipal User user) {
         requireAdmin(user);

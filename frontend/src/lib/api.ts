@@ -369,9 +369,20 @@ export const api = {
 
   // ── admin (email-gated server-side; a 403 means not an admin) ──
   adminInsights: () => request<AdminInsights>("/api/admin/insights"),
+  adminUsers: () => request<AdminUser[]>("/api/admin/users"),
   adminPrune: () => request<{ deleted: number }>("/api/admin/prune-ai-usage", { method: "POST" }),
   adminFeedback: () => request<AdminFeedback>("/api/admin/feedback"),
 };
+
+export interface AdminUser {
+  name: string;
+  email: string;
+  verified: boolean;
+  joined: string;               // ISO instant
+  mocks: number;
+  lastActive: string | null;    // ISO instant, null if never
+  readiness: number | null;     // avg measurement score, null if none
+}
 
 export type FeedbackCategory = "INTERVIEW" | "IDEA" | "BUG" | "PRAISE" | "OTHER";
 export interface AdminFeedbackItem {

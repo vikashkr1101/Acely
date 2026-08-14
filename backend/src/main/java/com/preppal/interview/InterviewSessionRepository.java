@@ -44,4 +44,19 @@ public interface InterviewSessionRepository extends JpaRepository<InterviewSessi
 
     @Query("select s.role, count(s) from InterviewSession s group by s.role order by count(s) desc")
     List<Object[]> topRoles(Pageable pageable);
+
+    // ── admin users list (per-user aggregates) ──
+    @Query("select s.userId, count(s) from InterviewSession s group by s.userId")
+    List<Object[]> mockCountByUser();
+
+    @Query("select s.userId, max(s.createdAt) from InterviewSession s group by s.userId")
+    List<Object[]> lastActivityByUser();
+
+    @Query("""
+           select s.userId, avg(s.overallScore) from InterviewSession s
+           where s.status = com.preppal.interview.SessionStatus.COMPLETED and s.overallScore is not null
+             and s.hasEstimated = false
+             and (s.checkpoint = true or s.scoringMode = com.preppal.interview.ScoringMode.INTERVIEW)
+           group by s.userId""")
+    List<Object[]> readinessByUser();
 }

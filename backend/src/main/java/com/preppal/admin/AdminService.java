@@ -5,16 +5,21 @@ import com.preppal.feedback.FeedbackRepository;
 import com.preppal.interview.InterviewSessionRepository;
 import com.preppal.interview.InterviewType;
 import com.preppal.interview.SessionStatus;
+import com.preppal.user.User;
 import com.preppal.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -98,13 +103,36 @@ public class AdminService {
                 practiceMix, topRoles, aiUsageRows, oldestDays);
     }
 
+    /** The full user list for the operator cockpit: who signed up, verified status, and their activity. */
+    @Transactional(readOnly = true)
+    public List<AdminUserRow> users() {
+        Map<UUID, Long> mocks = new HashMap<>();
+        for (Object[] r : sessions.mockCountByUser()) mocks.put((UUID) r[0], ((Number) r[1]).longValue());
+
+        Map<UUID, Instant> lastActive = new HashMap<>();
+        for (Object[] r : sessions.lastActivityByUser()) lastActive.put((UUID) r[0], (Instant) r[1]);
+
+        Map<UUID, Integer> readiness = new HashMap<>();
+        for (Object[] r : sessions.readinessByUser()) {
+            if (r[1] != null) readiness.put((UUID) r[0], (int) Math.round(((Number) r[1]).doubleValue()));
+        }
+
+        List<AdminUserRow> rows = new ArrayList<>();
+        for (User u : users.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))) {
+            rows.add(new AdminUserRow(
+                    u.getName(), u.getEmail(), u.isEmailVerified(), u.getCreatedAt(),
+                    mocks.getOrDefault(u.getId(), 0L), lastActive.get(u.getId()), readiness.get(u.getId())));
+        }
+        return rows;
+    }
+
     @Transactional(readOnly = true)
     public AdminFeedbackDto feedback() {
         Double avg = feedback.avgRating();
         long total = feedback.count();
         long week = feedback.countByCreatedAtAfter(Instant.now().minus(Duration.ofDays(7)));
         List<AdminFeedbackDto.Item> recent = new ArrayList<>();
-        for (Object[] r : feedback.recentWithUser(PageRequest.of(0, 30))) {
+        for (Object[] r : feedback.recentWithUser(PageRequest.of(0, 200))) {
             recent.add(new AdminFeedbackDto.Item(
                     (Integer) r[0], String.valueOf(r[1]), (String) r[2], (String) r[4], (Instant) r[3]));
         }
