@@ -30,8 +30,8 @@ public class AdminService {
     private final AiUsageRepository aiUsage;
     private final FeedbackRepository feedback;
 
-    /** ai_usage rows older than this are pruned (nightly + on-demand). */
-    public static final int AI_USAGE_RETENTION_DAYS = 60;
+    /** On a manual purge, ai_usage rows older than this are deleted (keeps just the last day). */
+    public static final int AI_USAGE_RETENTION_DAYS = 1;
 
     @Transactional(readOnly = true)
     public AdminInsightsDto insights() {
@@ -45,10 +45,10 @@ public class AdminService {
         long totalMocks = sessions.count();
         long mocks7d = sessions.countByCreatedAtAfter(weekAgo);
 
+        // Completion = finished out of everything started (all users). In-progress / half-done mocks
+        // count as not-yet-completed, so the rate honestly drops below 100% when sessions are left open.
         long completed = sessions.countByStatus(SessionStatus.COMPLETED);
-        long abandoned = sessions.countByStatus(SessionStatus.ABANDONED);
-        long finished = completed + abandoned;
-        int completionRate = finished == 0 ? 0 : (int) Math.round(100.0 * completed / finished);
+        int completionRate = totalMocks == 0 ? 0 : (int) Math.round(100.0 * completed / totalMocks);
 
         Double avg = sessions.avgReadiness();
         Integer avgReadiness = avg == null ? null : (int) Math.round(avg);

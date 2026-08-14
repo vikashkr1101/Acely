@@ -54,10 +54,10 @@ export default function AdminPage() {
     setPruning(true);
     try {
       const r = await api.adminPrune();
-      setToast(`Pruned ${r.deleted} row${r.deleted === 1 ? "" : "s"}`);
+      setToast(`Deleted ${r.deleted} row${r.deleted === 1 ? "" : "s"}`);
       setData(await api.adminInsights());
     } catch {
-      setToast("Prune failed — try again.");
+      setToast("Delete failed — try again.");
     } finally {
       setPruning(false);
       setTimeout(() => setToast(null), 3200);
@@ -207,11 +207,11 @@ export default function AdminPage() {
           <div style={CARD}>
             <h3 style={{ fontSize: 13.5 }}>Signups</h3>
             <p style={{ fontSize: 11.5, color: "var(--faint)", margin: "2px 0 14px" }}>New users per week · last 8 weeks</p>
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 7, height: 92 }}>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 7, height: 100 }}>
               {data.signupsWeekly.map((v, i) => (
-                <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, justifyContent: "flex-end" }}>
-                  <div style={{ width: "100%", maxWidth: 26, height: `${Math.max(4, (v / signMax) * 100)}%`, background: "var(--grad)", borderRadius: "6px 6px 0 0" }} title={`${v}`} />
-                  <span style={{ fontSize: 10, color: "var(--faint)" }}>W{i + 1}</span>
+                <div key={i} style={{ flex: 1, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end" }}>
+                  <div style={{ width: "100%", maxWidth: 26, height: `${v > 0 ? Math.max(4, Math.round((v / signMax) * 74)) : 0}px`, background: "var(--grad)", borderRadius: "6px 6px 0 0" }} title={`${v} signup${v === 1 ? "" : "s"}`} />
+                  <span style={{ fontSize: 10, color: "var(--faint)", marginTop: 6 }}>W{i + 1}</span>
                 </div>
               ))}
             </div>
@@ -322,10 +322,10 @@ export default function AdminPage() {
                   disabled={pruning}
                   style={{ background: "var(--grad)", color: "#fff", border: "none", borderRadius: 11, padding: "10px 16px", fontFamily: "inherit", fontWeight: 800, fontSize: 13, cursor: pruning ? "default" : "pointer", boxShadow: "var(--csh)", opacity: pruning ? 0.6 : 1 }}
                 >
-                  {pruning ? "Pruning…" : "🧹 Prune rows > 60 days"}
+                  {pruning ? "Deleting…" : "🧹 Delete rows older than 1 day"}
                 </button>
               </div>
-              <p style={{ fontSize: 11.5, color: "var(--faint)", marginTop: 10 }}>⏱ Auto-prune runs nightly (deletes ai_usage older than 60 days). This forces it now.</p>
+              <p style={{ fontSize: 11.5, color: "var(--faint)", marginTop: 10 }}>🗑 Manual only. Deletes ai_usage rows older than 1 day, keeping just the last day.</p>
             </div>
           </>
         )}
