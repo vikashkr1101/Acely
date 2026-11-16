@@ -12,14 +12,16 @@ interface AuthShellProps {
   altHref: string;
   altLabel: string;
   children: ReactNode;
+  /** Centre the title + subtitle (for pages whose body is centred, e.g. verify). */
+  centered?: boolean;
 }
 
 /** Presentational wrapper shared by the login & signup pages. */
-export function AuthShell({ title, subtitle, altText, altHref, altLabel, children }: AuthShellProps) {
+export function AuthShell({ title, subtitle, altText, altHref, altLabel, children, centered }: AuthShellProps) {
   return (
     <main className="auth-wrap">
       <Link href="/" className="auth-home">← Home</Link>
-      <div className="auth-card">
+      <div className={`auth-card${centered ? " auth-centered" : ""}`}>
         <Link href="/" className="auth-brand" aria-label="Acely — home">
           <BrandLockup />
         </Link>

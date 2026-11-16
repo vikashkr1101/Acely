@@ -19,6 +19,9 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${preppal.ratelimit.auth-per-hour:30}")
     private int authPerHour;
 
+    @Value("${preppal.ratelimit.demo-per-hour:300}")
+    private int demoPerHour;
+
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(rateLimit).addPathPatterns("/api/interviews/**");
@@ -33,5 +36,10 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(new IpRateLimitInterceptor(authPerHour,
                         "Too many attempts from your network — please try again in a bit."))
                 .addPathPatterns("/api/auth/signup", "/api/auth/login");
+
+        // Anonymous demo analytics: a full tour sends ~10 pings, so this is generous for real visitors
+        // (incl. shared campus IPs) while capping how fast one source can write rows.
+        registry.addInterceptor(new IpRateLimitInterceptor(demoPerHour, "Too many requests."))
+                .addPathPatterns("/api/demo/track");
     }
 }

@@ -1,12 +1,21 @@
 // Browser text-to-speech + delivery-metric helpers (all on-device, free).
 
-export function speak(text: string) {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
+export function speak(text: string, handlers?: { onStart?: () => void; onEnd?: () => void }) {
+  if (typeof window === "undefined" || !window.speechSynthesis) {
+    handlers?.onEnd?.();
+    return;
+  }
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.rate = 1;
   u.pitch = 1;
   u.lang = "en-US";
+  if (handlers?.onStart) u.onstart = () => handlers.onStart?.();
+  if (handlers?.onEnd) {
+    const done = () => handlers.onEnd?.();
+    u.onend = done;
+    u.onerror = done; // a cancelled or failed utterance must still clear the "speaking" state
+  }
   window.speechSynthesis.speak(u);
 }
 

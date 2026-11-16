@@ -103,6 +103,8 @@ preppal:
     per-minute: ${RATE_LIMIT_PER_MINUTE:40}
     # Max email-sending requests (forgot-password / resend-code) per IP per hour — protects the mail quota.
     forgot-per-hour: ${FORGOT_PER_HOUR:6}
+    # Anonymous demo-analytics pings (/api/demo/track) per IP per hour. A full demo tour sends ~10.
+    demo-per-hour: ${DEMO_PER_HOUR:300}
     # Max signup+login attempts per IP per hour. Lenient for shared campus/carrier IPs; stops floods.
     auth-per-hour: ${AUTH_PER_HOUR:30}
 

@@ -1,11 +1,10 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { FiKey } from "react-icons/fi";
-import { api } from "@/lib/api";
-import { useAuthAction } from "@/lib/useAuthAction";
-import { AuthShell, Field } from "@/components/auth/AuthShell";
+import { useRouter, useSearchParams } from "next/navigation";
+import { api, setToken } from "@/lib/api";
+import { AuthShell } from "@/components/auth/AuthShell";
+import { HexOtp } from "@/components/auth/HexOtp";
 
 /** vkumar+1111@pmaps.in → vk*********@pmaps.in — keeps 2 chars + the domain so a typo is still catchable. */
 function maskEmail(e: string): string {
@@ -24,9 +23,8 @@ const RESEND_COOLDOWN = 45; // seconds before "Resend code" becomes available
 
 function VerifyInner() {
   const params = useSearchParams();
+  const router = useRouter();
   const email = (params.get("email") ?? "").trim().toLowerCase();
-  const { run, error, loading } = useAuthAction();
-  const [code, setCode] = useState("");
   const [resendMsg, setResendMsg] = useState("");
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN);
   const [secondsLeft, setSecondsLeft] = useState(CODE_TTL);
@@ -64,6 +62,7 @@ function VerifyInner() {
         altText="Need an account?"
         altHref="/signup"
         altLabel="Sign up"
+        centered
       >
         <p className="auth-error">Please sign up or log in again to get a fresh verification code.</p>
       </AuthShell>
@@ -77,34 +76,21 @@ function VerifyInner() {
       altText="Wrong email?"
       altHref="/signup"
       altLabel="Start over"
+      centered
     >
-      <form onSubmit={(e) => run(e, () => api.verifyEmail(email, code))}>
-        <Field
-          label="6-digit code"
-          icon={<FiKey />}
-          value={code}
-          onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          placeholder="123456"
-          maxLength={6}
-          required
-        />
-        <p className={`verify-timer${secondsLeft <= 0 ? " expired" : ""}`}>
-          {secondsLeft > 0 ? `Code expires in ${mmss(secondsLeft)}` : "Code expired — tap resend for a new one."}
-        </p>
-        {error && <p className="auth-error">{error}</p>}
-        <p className="verify-privacy">🔒 We&apos;ll never share your email or send you spam.</p>
-        <button className="btn auth-submit" type="submit" disabled={loading || code.length !== 6}>
-          {loading ? (
-            <>
-              <span className="btn-spinner" aria-hidden /> Verifying…
-            </>
-          ) : (
-            "Verify & continue →"
-          )}
-        </button>
-      </form>
+      <HexOtp
+        onVerify={async (code) => {
+          const res = await api.verifyEmail(email, code);
+          setToken(res.token);
+        }}
+        onContinue={() => router.push("/dashboard")}
+      />
+
+      <p className={`verify-timer${secondsLeft <= 0 ? " expired" : ""}`}>
+        {secondsLeft > 0 ? `Code expires in ${mmss(secondsLeft)}` : "Code expired. Tap resend for a new one."}
+      </p>
+      <p className="verify-privacy">🔒 We&apos;ll never share your email or send you spam.</p>
+
       <p className="auth-alt">
         Didn&apos;t get it?{" "}
         <button

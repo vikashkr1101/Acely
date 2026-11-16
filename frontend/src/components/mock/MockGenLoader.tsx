@@ -12,10 +12,12 @@ const STEPS = [
 export function MockGenLoader() {
   const [step, setStep] = useState(0);
 
+  // Advance forward through the steps once and rest on the last one — never loop back to Step 1.
   useEffect(() => {
-    const id = setInterval(() => setStep((s) => (s + 1) % STEPS.length), 1800);
-    return () => clearInterval(id);
-  }, []);
+    if (step >= STEPS.length - 1) return;
+    const id = setTimeout(() => setStep((s) => s + 1), 1800);
+    return () => clearTimeout(id);
+  }, [step]);
 
   return (
     <div className="mockgen">

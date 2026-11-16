@@ -1,0 +1,146 @@
+{
+ "session": "4bc62966-2018-46ec-98a8-bfea9a96d337",
+ "calls": [
+  {
+   "operation": "GENERATE_QUESTIONS",
+   "provider": "ZHIPU",
+   "success": true,
+   "fell_back": false,
+   "latency_ms": 64105,
+   "error": null,
+   "created_at": "2026-10-27T14:00:00+00:00"
+  },
+  {
+   "operation": "SCORE_ANSWER",
+   "provider": "GEMINI",
+   "success": false,
+   "fell_back": false,
+   "latency_ms": 1618,
+   "error": "503 Service Unavailable: \"{<EOL>  \"error\": {<EOL>    \"code\": 503,<EOL>    \"message\": \"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",<EOL>    \"status\": \"UNAVAILABLE\"<EOL>  }<EOL>}<EOL>\"",
+   "created_at": "2026-10-27T14:00:35.33312+00:00"
+  },
+  {
+   "operation": "SCORE_ANSWER",
+   "provider": "ZHIPU",
+   "success": true,
+   "fell_back": true,
+   "latency_ms": 55632,
+   "error": null,
+   "created_at": "2026-10-27T14:01:30.965038+00:00"
+  },
+  {
+   "operation": "SCORE_ANSWER",
+   "provider": "GEMINI",
+   "success": true,
+   "fell_back": false,
+   "latency_ms": 87409,
+   "error": null,
+   "created_at": "2026-10-27T14:02:58.917003+00:00"
+  },
+  {
+   "operation": "SCORE_ANSWER",
+   "provider": "GEMINI",
+   "success": true,
+   "fell_back": false,
+   "latency_ms": 6948,
+   "error": null,
+   "created_at": "2026-10-27T14:03:06.39407+00:00"
+  },
+  {
+   "operation": "SCORE_ANSWER",
+   "provider": "GEMINI",
+   "success": true,
+   "fell_back": false,
+   "latency_ms": 3777,
+   "error": null,
+   "created_at": "2026-10-27T14:03:10.538705+00:00"
+  },
+  {
+   "operation": "SCORE_ANSWER",
+   "provider": "GEMINI",
+   "success": true,
+   "fell_back": false,
+   "latency_ms": 3617,
+   "error": null,
+   "created_at": "2026-10-27T14:03:14.592664+00:00"
+  },
+  {
+   "operation": "SCORE_ANSWER",
+   "provider": "GEMINI",
+   "success": true,
+   "fell_back": false,
+   "latency_ms": 6613,
+   "error": null,
+   "created_at": "2026-10-27T14:03:21.504612+00:00"
+  },
+  {
+   "operation": "SCORE_ANSWER",
+   "provider": "GEMINI",
+   "success": true,
+   "fell_back": false,
+   "latency_ms": 2511,
+   "error": null,
+   "created_at": "2026-10-27T14:03:24.278431+00:00"
+  },
+  {
+   "operation": "SCORE_ANSWER",
+   "provider": "GEMINI",
+   "success": true,
+   "fell_back": false,
+   "latency_ms": 2941,
+   "error": null,
+   "created_at": "2026-10-27T14:03:27.486221+00:00"
+  },
+  {
+   "operation": "ANALYZE_SESSION",
+   "provider": "ZHIPU",
+   "success": true,
+   "fell_back": false,
+   "latency_ms": 40999,
+   "error": null,
+   "created_at": "2026-10-27T14:04:09.104895+00:00"
+  }
+ ],
+ "totals": [
+  {
+   "operation": "SCORE_ANSWER",
+   "provider": "GEMINI",
+   "success": false,
+   "fell_back": false,
+   "calls": 1,
+   "avg_ms": 1618
+  },
+  {
+   "operation": "SCORE_ANSWER",
+   "provider": "ZHIPU",
+   "success": true,
+   "fell_back": true,
+   "calls": 1,
+   "avg_ms": 55632
+  },
+  {
+   "operation": "GENERATE_QUESTIONS",
+   "provider": "ZHIPU",
+   "success": true,
+   "fell_back": false,
+   "calls": 17,
+   "avg_ms": 37021
+  },
+  {
+   "operation": "SCORE_ANSWER",
+   "provider": "GEMINI",
+   "success": true,
+   "fell_back": false,
+   "calls": 44,
+   "avg_ms": 6450
+  },
+  {
+   "operation": "ANALYZE_SESSION",
+   "provider": "ZHIPU",
+   "success": true,
+   "fell_back": false,
+   "calls": 7,
+   "avg_ms": 38456
+  }
+ ]
+}

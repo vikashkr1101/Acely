@@ -1,3 +1,4 @@
+import { verdictLabel as sharedVerdict } from "@/lib/score";
 import type { Report, InterviewType, ExperienceLevel } from "@/lib/api";
 
 const TYPE_LABEL: Record<InterviewType, string> = {
@@ -33,10 +34,7 @@ function band(v: number | null): { fg: RGB; bg: RGB } {
 }
 function verdictLabel(v: number | null) {
   if (v == null || v === 0) return "Just started";
-  if (v >= 85) return "Interview-ready";
-  if (v >= 70) return "Almost ready";
-  if (v >= 50) return "Getting there";
-  return "Early days";
+  return sharedVerdict(v);
 }
 function standingHeadline(v: number | null) {
   if (v == null || v === 0) return "You've made a start — that's the hardest step.";
@@ -133,7 +131,6 @@ export async function downloadReportPdf(report: Report, userName: string) {
       ...(report.checkpoint ? [{ t: "Benchmark" }] : report.difficulty === "HARD" ? [{ t: "Hard" }] : []),
       ...(report.checkpoint && report.stack ? [{ t: report.stack }] : []),
       ...(report.scoringMode && !report.checkpoint ? [{ t: report.scoringMode === "INTERVIEW" ? "Mock Interview" : "Practice" }] : []),
-      { t: report.mode === "VOICE" ? "Voice" : "Text" },
       { t: report.questions.length === 1 ? "1 question" : `${report.questions.length} questions` },
       { t: dateStr },
     ];

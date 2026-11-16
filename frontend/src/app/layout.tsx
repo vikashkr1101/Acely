@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { ServerWakeNotice } from "@/components/ui/ServerWakeNotice";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -72,6 +73,7 @@ export default function RootLayout({
           }}
         />
         {children}
+        <ServerWakeNotice />
       </body>
     </html>
   );

@@ -159,7 +159,7 @@ export default function JourneyPage() {
           </div>
         ) : (
           <>
-            <div className="db-card">
+            <div className="db-card" data-tour="journey">
               <div className="jr-lenses">
                 <button className={`jr-lens${lens === "overall" ? " on" : ""}`} onClick={() => setLens("overall")}>Overall</button>
                 <button className={`jr-lens${lens === "type" ? " on" : ""}`} onClick={() => setLens("type")}>By interview type</button>

@@ -18,7 +18,7 @@ const WHAT = [
   },
   {
     t: "Engineered, not prompted",
-    d: "The questions, the difficulty, the scoring, even a voice mode that makes you answer out loud under pressure — all built in. You don't assemble it, and you can't tune it.",
+    d: "The questions, the difficulty, the scoring, even voice-first answers that make you speak out loud under pressure — all built in. You don't assemble it, and you can't tune it.",
   },
   {
     t: "Held to a fixed standard",

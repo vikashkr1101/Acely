@@ -12,7 +12,7 @@ export function LoadError({ what = "this", onRetry }: { what?: string; onRetry?:
       <div style={{ fontSize: 34 }}>🔌</div>
       <h3 style={{ fontSize: 19, letterSpacing: "-0.02em", margin: "12px 0 6px" }}>Couldn&apos;t load {what}</h3>
       <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, margin: "0 0 18px" }}>
-        The server didn&apos;t respond. Make sure the backend is running, then try again.
+        The server didn&apos;t respond in time. It may still be starting up — please wait a moment and try again.
       </p>
       <button className="btn" onClick={onRetry ?? (() => window.location.reload())}>Retry</button>
     </div>

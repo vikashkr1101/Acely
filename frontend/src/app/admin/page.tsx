@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { Loader } from "@/components/ui/Loader";
-import { api, getToken, type AdminInsights, type AdminFeedback, type AdminUser } from "@/lib/api";
+import { api, getToken, type AdminInsights, type AdminFeedback, type AdminUser, type AdminDemoStats } from "@/lib/api";
 import { LoadError } from "@/components/ui/LoadError";
 import { PageHeader } from "@/components/layout/PageHeader";
 
@@ -20,6 +20,11 @@ function since(iso: string | null): string {
   const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
   return d <= 0 ? "today" : d === 1 ? "1d ago" : `${d}d ago`;
 }
+/** Guided-tour steps, in order — mirrors STEPS in components/demo/DemoTour.tsx. */
+const DEMO_STEPS = ["Readiness score", "Graded evidence", "Retry 58 → 91", "Journey", "Behind the scenes", "Your turn"];
+function pct(n: number, d: number) {
+  return d ? `${Math.round((100 * n) / d)}%` : "—";
+}
 const CAT_TAG: Record<string, { c: string; bg: string; label: string }> = {
   INTERVIEW: { c: "var(--brandink)", bg: "var(--soft)", label: "Interview" },
   IDEA: { c: "#2563eb", bg: "#e6effe", label: "Idea" },
@@ -33,12 +38,13 @@ export default function AdminPage() {
   const [data, setData] = useState<AdminInsights | null>(null);
   const [users, setUsers] = useState<AdminUser[] | null>(null);
   const [fb, setFb] = useState<AdminFeedback | null>(null);
+  const [demo, setDemo] = useState<AdminDemoStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [pruning, setPruning] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const [view, setView] = useState<"dashboard" | "users" | "feedback">("dashboard");
+  const [view, setView] = useState<"dashboard" | "users" | "feedback" | "demo">("dashboard");
 
   useEffect(() => {
     if (!getToken()) { router.replace("/login"); return; }
@@ -48,6 +54,7 @@ export default function AdminPage() {
       .finally(() => setLoading(false));
     api.adminUsers().then(setUsers).catch(() => {});
     api.adminFeedback().then(setFb).catch(() => {});
+    api.adminDemo().then(setDemo).catch(() => {});
   }, [router]);
 
   async function prune() {
@@ -177,17 +184,143 @@ export default function AdminPage() {
     </div>
   );
 
+  const TH: React.CSSProperties = { fontSize: 10.5, fontWeight: 800, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--faint)" };
+  const flag = (on: boolean) => <span style={{ color: on ? "#16a34a" : "var(--faint)", fontWeight: 900 }}>{on ? "✓" : "·"}</span>;
+  const demoPanel = !demo ? (
+    <div style={CARD}><p style={{ fontSize: 13, color: "var(--muted)" }}>Loading demo visits…</p></div>
+  ) : (() => {
+    const m = demo.last30d;
+    const dayMax = Math.max(1, ...demo.daily.map((d) => d.count));
+    const srcMax = Math.max(1, ...demo.sources.map((s) => s.count));
+    const tiles: { l: string; v: React.ReactNode; d: string }[] = [
+      { l: "Visits 7d", v: demo.last7d.visits, d: `${demo.last7d.uniqueVisitors} unique visitor${demo.last7d.uniqueVisitors === 1 ? "" : "s"}` },
+      { l: "Visits 30d", v: m.visits, d: `${m.uniqueVisitors} unique · ${demo.mobilePct}% on mobile` },
+      { l: "Finished tour", v: pct(m.completedTour, m.visits), d: `${m.completedTour} of ${m.visits} (30d)` },
+      { l: "Behind the scenes", v: pct(m.openedBts, m.visits), d: `${m.openedBts} opened the AI log` },
+      { l: "Sign-up clicks", v: m.clickedSignup, d: `${m.hitSignupPrompt} saw the account prompt` },
+      { l: "All time", v: demo.allTime.visits, d: `${demo.allTime.uniqueVisitors} unique visitors` },
+    ];
+    return (
+      <>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 11 }}>
+          {tiles.map((k) => (
+            <div key={k.l} style={CARD}>
+              <div style={{ ...TH, fontSize: 11, marginBottom: 7 }}>{k.l}</div>
+              <div style={{ fontSize: 24, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>{k.v}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, marginTop: 4, color: "var(--muted)" }}>{k.d}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16 }}>
+          <div style={CARD}>
+            <h3 style={{ fontSize: 13.5 }}>Demo opens</h3>
+            <p style={{ fontSize: 11.5, color: "var(--faint)", margin: "2px 0 14px" }}>Visits per day · last 14 days</p>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: 100 }}>
+              {demo.daily.map((d) => (
+                <div key={d.date} style={{ flex: 1, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end" }} title={`${d.date}: ${d.count} visit${d.count === 1 ? "" : "s"}`}>
+                  <div style={{ width: "100%", maxWidth: 22, height: `${d.count > 0 ? Math.max(4, Math.round((d.count / dayMax) * 74)) : 0}px`, background: "var(--grad)", borderRadius: "5px 5px 0 0" }} />
+                  <span style={{ fontSize: 9.5, color: "var(--faint)", marginTop: 6 }}>{Number(d.date.slice(8))}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={CARD}>
+            <h3 style={{ fontSize: 13.5 }}>Tour funnel</h3>
+            <p style={{ fontSize: 11.5, color: "var(--faint)", margin: "2px 0 14px" }}>Visits that reached each step · last 30 days</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+              {DEMO_STEPS.slice(0, demo.tourSteps).map((label, i) => {
+                const n = demo.funnel[i] ?? 0;
+                return (
+                  <div key={label} style={{ display: "grid", gridTemplateColumns: "130px 1fr 64px", gap: 10, alignItems: "center", fontSize: 12.5 }}>
+                    <span style={{ fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{i + 1}. {label}</span>
+                    <span style={{ height: 9, background: "var(--soft)", borderRadius: 999, overflow: "hidden" }}>
+                      <span style={{ display: "block", height: "100%", width: m.visits ? `${(n / m.visits) * 100}%` : 0, background: "var(--grad)", borderRadius: 999 }} />
+                    </span>
+                    <span style={{ textAlign: "right", color: "var(--muted)", fontVariantNumeric: "tabular-nums" }}>{n} · {pct(n, m.visits)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={CARD}>
+            <h3 style={{ fontSize: 13.5 }}>Where they came from</h3>
+            <p style={{ fontSize: 11.5, color: "var(--faint)", margin: "2px 0 14px" }}>
+              Last 30 days · add <b style={{ color: "var(--ink)" }}>?ref=name</b> to a link to tag it
+            </p>
+            {demo.sources.length === 0 ? (
+              <p style={{ fontSize: 13, color: "var(--muted)" }}>No visits yet.</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+                {demo.sources.map((s) => (
+                  <div key={s.label} style={{ display: "grid", gridTemplateColumns: "110px 1fr 36px", gap: 10, alignItems: "center", fontSize: 13 }}>
+                    <span style={{ fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.label}</span>
+                    <span style={{ height: 9, background: "var(--soft)", borderRadius: 999, overflow: "hidden" }}>
+                      <span style={{ display: "block", height: "100%", width: `${(s.count / srcMax) * 100}%`, background: "var(--grad)", borderRadius: 999 }} />
+                    </span>
+                    <span style={{ textAlign: "right", fontWeight: 700, color: "var(--muted)", fontVariantNumeric: "tabular-nums" }}>{s.count}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div style={CARD}>
+          <h3 style={{ fontSize: 14 }}>Latest visits</h3>
+          <p style={{ fontSize: 11.5, color: "var(--faint)", margin: "2px 0 14px" }}>Anonymous · no IP or personal data stored · newest first</p>
+          {demo.recent.length === 0 ? (
+            <p style={{ fontSize: 13, color: "var(--muted)" }}>No visits yet. Share acely.in/demo to see them here.</p>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 600 }}>
+                <thead>
+                  <tr style={TH}>
+                    <th style={{ textAlign: "left", padding: "0 8px 9px 0" }}>When</th>
+                    <th style={{ textAlign: "left", padding: "0 8px 9px 0" }}>Source</th>
+                    <th style={{ textAlign: "left", padding: "0 8px 9px 0" }}>Device</th>
+                    <th style={{ textAlign: "right", padding: "0 8px 9px 0" }}>Tour</th>
+                    <th style={{ textAlign: "center", padding: "0 8px 9px 0" }}>AI log</th>
+                    <th style={{ textAlign: "center", padding: "0 8px 9px 0" }}>Prompt</th>
+                    <th style={{ textAlign: "center", padding: "0 0 9px" }}>Sign-up</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {demo.recent.map((v, i) => (
+                    <tr key={v.at + i} style={{ borderTop: "1px solid var(--line)" }}>
+                      <td style={{ padding: "10px 8px 10px 0", whiteSpace: "nowrap", color: "var(--muted)" }}>{new Date(v.at).toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</td>
+                      <td style={{ padding: "10px 8px 10px 0", fontWeight: 700 }}>{v.source ?? <span style={{ color: "var(--faint)", fontWeight: 600 }}>direct</span>}</td>
+                      <td style={{ padding: "10px 8px 10px 0", color: "var(--muted)" }}>{v.mobile ? "📱 Mobile" : "💻 Desktop"}</td>
+                      <td style={{ padding: "10px 8px 10px 0", textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 700, color: v.completed ? "#16a34a" : "var(--ink)" }}>
+                        {v.completed ? "✓ done" : v.maxStep ? `${v.maxStep}/${demo.tourSteps}` : "—"}
+                      </td>
+                      <td style={{ padding: "10px 8px 10px 0", textAlign: "center" }}>{flag(v.openedBts)}</td>
+                      <td style={{ padding: "10px 8px 10px 0", textAlign: "center" }}>{flag(v.hitGate)}</td>
+                      <td style={{ padding: "10px 0", textAlign: "center" }}>{flag(v.clickedSignup)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </>
+    );
+  })();
+
   return (
     <AppShell>
       <div style={{ display: "flex", flexDirection: "column", gap: 16, paddingBottom: 30 }}>
         <PageHeader
           eyebrow="Admin"
-          title={view === "users" ? "Users" : view === "feedback" ? "User feedback" : "Admin insights"}
-          subtitle={view === "users" ? "Everyone who has an account · newest first" : view === "feedback" ? "All feedback · newest first" : "Email-gated, read-only operator cockpit."}
+          title={view === "users" ? "Users" : view === "feedback" ? "User feedback" : view === "demo" ? "Demo visits" : "Admin insights"}
+          subtitle={view === "users" ? "Everyone who has an account · newest first" : view === "feedback" ? "All feedback · newest first" : view === "demo" ? "Who opened acely.in/demo, and how far they got" : "Email-gated, read-only operator cockpit."}
           actions={view === "dashboard" ? <span style={{ fontSize: 12, color: "var(--muted)" }}>🔒 Server-enforced access</span> : backBtn}
         />
 
-        {view === "users" ? usersPanel : view === "feedback" ? feedbackPanel : (
+        {view === "users" ? usersPanel : view === "feedback" ? feedbackPanel : view === "demo" ? demoPanel : (
           <>
             {/* KPIs — tap Users to open the list */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 11 }}>
@@ -303,6 +436,23 @@ export default function AdminPage() {
                     <span><b style={{ fontSize: 20, fontWeight: 800 }}>{fb.avgRating ?? "—"}</b> <span style={{ fontSize: 11, color: "var(--faint)", fontWeight: 700 }}>avg ★</span></span>
                     <span><b style={{ fontSize: 20, fontWeight: 800 }}>{fb.total}</b> <span style={{ fontSize: 11, color: "var(--faint)", fontWeight: 700 }}>total</span></span>
                     <span><b style={{ fontSize: 20, fontWeight: 800 }}>{fb.thisWeek}</b> <span style={{ fontSize: 11, color: "var(--faint)", fontWeight: 700 }}>this week</span></span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* demo visits — tap to open the full breakdown */}
+            <div onClick={() => setView("demo")} style={{ ...CARD, cursor: "pointer" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+                <div>
+                  <h3 style={{ fontSize: 14 }}>Demo visits <span style={{ color: "var(--brand)", fontWeight: 900 }}>→</span></h3>
+                  <p style={{ fontSize: 11.5, color: "var(--faint)", margin: "2px 0 0" }}>Recruiters &amp; visitors on acely.in/demo · tap for the funnel</p>
+                </div>
+                {demo && (
+                  <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                    <span><b style={{ fontSize: 20, fontWeight: 800 }}>{demo.last7d.visits}</b> <span style={{ fontSize: 11, color: "var(--faint)", fontWeight: 700 }}>this week</span></span>
+                    <span><b style={{ fontSize: 20, fontWeight: 800 }}>{demo.last30d.uniqueVisitors}</b> <span style={{ fontSize: 11, color: "var(--faint)", fontWeight: 700 }}>unique 30d</span></span>
+                    <span><b style={{ fontSize: 20, fontWeight: 800 }}>{pct(demo.last30d.completedTour, demo.last30d.visits)}</b> <span style={{ fontSize: 11, color: "var(--faint)", fontWeight: 700 }}>finished tour</span></span>
                   </div>
                 )}
               </div>

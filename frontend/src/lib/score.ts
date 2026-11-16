@@ -16,3 +16,16 @@ export function scoreBand(v: number | null | undefined): Band {
 export function scoreColor(v: number | null | undefined): string {
   return v == null ? "var(--faint)" : BAND_HEX[scoreBand(v)];
 }
+
+/**
+ * One readiness verdict for a 0–100 score, used by the dashboard, the report, the PDF and the live
+ * scorecard so the SAME number never gets a different label on different screens.
+ * Interview-ready ≥85 · Almost ready 70–84 · Getting there 50–69 · Early days <50.
+ */
+export function verdictLabel(v: number | null | undefined): string {
+  if (v == null || v === 0) return "Just started";
+  if (v >= 85) return "Interview-ready";
+  if (v >= 70) return "Almost ready";
+  if (v >= 50) return "Getting there";
+  return "Early days";
+}

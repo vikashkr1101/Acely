@@ -6,11 +6,10 @@ import Link from "next/link";
 import { api, getToken, type InterviewDto } from "@/lib/api";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { speak, stopSpeaking, computeDelivery } from "@/lib/speech";
-import { scoreBand } from "@/lib/score";
+import { scoreBand, verdictLabel } from "@/lib/score";
 
 // ── Post-answer coaching (Practice) — band-keyed copy so tone matches the score honestly ──
 const BAND_RING: Record<string, string> = { g: "#57e08a", a: "#f5b301", r: "#f0637a" };
-const BAND_LABEL: Record<string, string> = { g: "Interview-ready", a: "Developing", r: "Early days" };
 const BAND_CHIP: Record<string, string> = { g: "Strong", a: "Getting there", r: "Needs structure" };
 const BAND_REASSURE: Record<string, string> = {
   r: "Your substance is stronger than your current delivery — this measures how it came across, not your ability.",
@@ -45,6 +44,11 @@ const TIPS = [
   "Keep it to a minute or two, then stop. Concise is confident.",
 ];
 
+/** Join text typed before switching to voice with what was then spoken. */
+function joinAnswer(a: string, b: string) {
+  return [a.trim(), b.trim()].filter(Boolean).join(" ");
+}
+
 function faceFor(v: number) {
   if (v <= 2) return "😌";
   if (v <= 4) return "🙂";
@@ -67,6 +71,13 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
   const [edited, setEdited] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [speaking, setSpeaking] = useState(false); // TTS is reading the question aloud → live orb + beats
+  // How each answer is given: speaking by default, typing one tap away (and back). The choice carries to
+  // the next question; browsers without speech recognition fall back to typing.
+  const [inputMode, setInputMode] = useState<"voice" | "type">("voice");
+  // Text typed before switching to voice — new speech is appended after it instead of replacing it.
+  const [carry, setCarry] = useState("");
+  const typeRef = useRef<HTMLTextAreaElement>(null);
   // retry loop (Practice): re-answer the same question, keep the first score to show the delta
   const [retrying, setRetrying] = useState(false);
   const [firstScore, setFirstScore] = useState<number | null>(null);
@@ -105,16 +116,23 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
   }, [id, router]);
 
   const q = iv?.questions[idx];
-  const isVoice = iv?.mode === "VOICE";
+  const isVoice = voice.supported && inputMode === "voice";
   const isInterview = iv?.scoringMode === "INTERVIEW"; // Mock Interview / Checkpoint — scored at the end
   const isCheckpoint = iv?.checkpoint ?? false;
 
+  // Read a question aloud and drive the "speaking" state so the orb pulses + beats animate live.
+  const readAloud = (t: string) =>
+    speak(t, { onStart: () => setSpeaking(true), onEnd: () => setSpeaking(false) });
+
   // Dictate every question aloud (text & voice) when it appears; a Repeat button is always available.
   useEffect(() => {
-    if (iv && q && !answered && !needNerves) speak(q.text);
-    return () => stopSpeaking();
+    if (iv && q && !answered && !needNerves) readAloud(q.text);
+    return () => {
+      stopSpeaking();
+      setSpeaking(false);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idx, answered, needNerves, iv?.mode]);
+  }, [idx, answered, needNerves]);
 
   // Once scoring finished AND the user has rated/skipped, reveal the report.
   useEffect(() => {
@@ -124,8 +142,8 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
 
   // Keep the editable transcript in sync with live speech while recording.
   useEffect(() => {
-    if (voice.listening) setEdited(voice.transcript);
-  }, [voice.transcript, voice.listening]);
+    if (voice.listening) setEdited(joinAnswer(carry, voice.transcript));
+  }, [voice.transcript, voice.listening, carry]);
 
   // Auto-scroll the live transcript so the newest words always stay in view.
   const transcriptRef = useRef<HTMLDivElement>(null);
@@ -268,7 +286,7 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
         : await api.answer(iv!.id, q.id, transcript, delivery);
       setIv((prev) => {
         if (!prev) return prev;
-        let qs = prev.questions.map((x) => x.id === q.id ? { ...x, answered: true, feedback: fb.feedback, modelAnswer: fb.modelAnswer, score: fb.score } : x);
+        let qs = prev.questions.map((x) => x.id === q.id ? { ...x, answered: true, answer: transcript, feedback: fb.feedback, modelAnswer: fb.modelAnswer, score: fb.score } : x);
         // a live follow-up slots in right after the question that prompted it
         if (fb.followUp && !qs.some((x) => x.id === fb.followUp!.id)) {
           const pos = qs.findIndex((x) => x.id === q.id);
@@ -290,15 +308,36 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
   }
   function submitVoice() {
     voice.stop();
-    const finalText = (edited || voice.transcript).trim();
+    const finalText = (edited || joinAnswer(carry, voice.transcript)).trim();
     const clarity = voice.clarity();
-    submit(finalText, { ...computeDelivery(finalText, voice.durationMs()), speechClarity: clarity ?? undefined });
+    // Pace & filler words describe how the answer was SPOKEN — if part of it was typed first, measure only
+    // the spoken part (and send no delivery metrics if nothing was actually spoken).
+    const spoken = carry ? voice.transcript.trim() : finalText;
+    submit(finalText, spoken
+      ? { ...computeDelivery(spoken, voice.durationMs()), speechClarity: clarity ?? undefined }
+      : undefined);
+  }
+  // Switch how this answer is given without losing a word: what's been said moves into the text box,
+  // and typed text stays in place with new speech continuing after it.
+  function switchToType() {
+    if (voice.listening) voice.stop();
+    setText((edited || joinAnswer(carry, voice.transcript)).trim());
+    setInputMode("type");
+    requestAnimationFrame(() => typeRef.current?.focus());
+  }
+  function switchToVoice() {
+    const typed = text.trim();
+    voice.reset();
+    setCarry(typed);
+    setEdited(typed);
+    setInputMode("voice");
   }
   function startRetry() {
     setRetrying(true);
     setError("");
     setText(q?.answer ?? "");
     setEdited(q?.answer ?? "");
+    setCarry("");
     voice.reset();
   }
   function next() {
@@ -310,6 +349,7 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
     setShowFull(false);
     setText("");
     setEdited("");
+    setCarry("");
     voice.reset();
     if (idx < total - 1) setIdx(idx + 1);
   }
@@ -395,7 +435,7 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
             </>
           ) : (
             <>
-              <div className="iv-orb" />
+              <div className={`iv-orb${speaking ? " speaking" : ""}`} />
               <div className="iv-who">Your AI coach</div>
               <div className="iv-state">
                 {isVoice
@@ -405,10 +445,16 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
                         ? <>🔴 Mic blocked — allow it in your browser</>
                         : voice.listening
                           ? <><span className="d" /> Listening — take your time</>
-                          : <>⚪ Tap the mic when you&apos;re ready</>)
-                  : "Read the question, then type your answer"}
+                          : speaking
+                            ? <><span className="d" /> Reading the question…</>
+                            : <>⚪ Tap the mic when you&apos;re ready</>)
+                  : speaking
+                    ? <><span className="d" /> Reading the question aloud…</>
+                    : "Read the question, then type your answer"}
               </div>
-              {isVoice && voice.listening && voice.status !== "reconnecting" && <div className="iv-wave">{Array.from({ length: 9 }).map((_, i) => <i key={i} />)}</div>}
+              {(speaking || (isVoice && voice.listening && voice.status !== "reconnecting")) && (
+                <div className="iv-wave">{Array.from({ length: 9 }).map((_, i) => <i key={i} />)}</div>
+              )}
             </>
           )}
         </div>
@@ -416,7 +462,7 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
         <div className="iv-answer">
           <div className="iv-qlabel">Question {idx + 1}{q?.followUp && <span className="iv-followtag">↳ Follow-up</span>}</div>
           <div className="iv-q">{q?.text}</div>
-          {!answered && <button className="iv-replay" onClick={() => q && speak(q.text)}>🔊 Repeat question</button>}
+          {!answered && <button className="iv-replay" onClick={() => q && readAloud(q.text)}>🔊 Repeat question</button>}
 
           {retrying && (
             <div className="iv-retry-note">↻ Retry — improve on your last answer{firstScore != null ? ` (scored ${firstScore})` : ""}. Edit it or start fresh.</div>
@@ -426,16 +472,22 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
             isVoice ? (
               <>
                 <div className="iv-transcript" ref={transcriptRef}>
-                  <div className="iv-tlabel">{voice.listening ? "Your answer, live" : "Your answer — fix any mis-heard words ✏️"}</div>
+                  <div className="iv-tlabel iv-tlabel-row">
+                    <span>{voice.listening ? "Your answer, live" : edited ? "Your answer — fix any mis-heard words ✏️" : "Your answer"}</span>
+                    <button type="button" className="iv-switch" onClick={switchToType} disabled={busy}>⌨️ Type instead</button>
+                  </div>
                   {voice.listening ? (
-                    <p>{voice.transcript || "Listening…"}<span className="iv-caret" /></p>
+                    <p>{(carry ? joinAnswer(carry, voice.transcript) : voice.transcript) || "Listening…"}<span className="iv-caret" /></p>
                   ) : edited ? (
                     <textarea className="iv-textarea" value={edited} onChange={(e) => setEdited(e.target.value)} rows={4} />
                   ) : (
                     <p style={{ color: "var(--faint)" }}>Tap the mic and start speaking.</p>
                   )}
                 </div>
-                {!voice.supported && <p className="iv-err">Voice isn&apos;t supported here — please use Chrome, or start a text mock.</p>}
+                {voice.status === "blocked" && (
+                  <p className="iv-warn">🎤 Microphone access is blocked. Allow it in your browser&apos;s site settings, or{" "}
+                    <button type="button" className="iv-inline-link" onClick={switchToType}>type your answer instead</button>.</p>
+                )}
                 {vSparse && <p className="iv-warn">⚠️ We may have missed part of your voice — please review the transcript above before submitting.</p>}
                 <div className="iv-tip">💡 <span>{tip}</span></div>
                 <div className="iv-controls">
@@ -447,8 +499,13 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
             ) : (
               <>
                 <div className="iv-transcript">
-                  <div className="iv-tlabel">Your answer</div>
-                  <textarea className="iv-textarea" value={text} onChange={(e) => setText(e.target.value)} placeholder="Type your answer… take your time." rows={4} />
+                  <div className="iv-tlabel iv-tlabel-row">
+                    <span>Your answer</span>
+                    {voice.supported && (
+                      <button type="button" className="iv-switch" onClick={switchToVoice} disabled={busy}>🎤 Speak instead</button>
+                    )}
+                  </div>
+                  <textarea ref={typeRef} className="iv-textarea" value={text} onChange={(e) => setText(e.target.value)} placeholder="Type your answer… take your time." rows={4} />
                 </div>
                 <div className="iv-tip">💡 <span>{tip}</span></div>
                 <div className="iv-controls">
@@ -476,7 +533,7 @@ export default function MockPage({ params }: { params: Promise<{ id: string }> }
                   <div className="ivc-ring" style={{ ["--p" as string]: `${q?.score}`, ["--c" as string]: BAND_RING[band] }}><b>{q?.score}<small>/100</small></b></div>
                   <div className="ivc-scbody">
                     <div className="ivc-verdicts">
-                      <span className="ivc-vpill">{BAND_LABEL[band]}</span>
+                      <span className="ivc-vpill">{verdictLabel(q?.score)}</span>
                       {weakest && <span className="ivc-vpill warn">{weakest.label} is the main limiter</span>}
                       {hasRetried && firstScore != null && q?.score != null && (
                         <span className={`ivc-vpill ${q.score - firstScore > 0 ? "up" : q.score - firstScore < 0 ? "down" : ""}`}>

@@ -20,7 +20,6 @@ export default function CheckpointPage() {
   const router = useRouter();
   const [role, setRole] = useState("");
   const [level, setLevel] = useState<ExperienceLevel>("FRESHER");
-  const [mode, setMode] = useState<"TEXT" | "VOICE">("TEXT");
   const [track, setTrack] = useState<InterviewTrack | null>(null);
   const [stack, setStack] = useState("");
   const [hasTrack, setHasTrack] = useState(false);
@@ -47,7 +46,7 @@ export default function CheckpointPage() {
     setCreating(true);
     try {
       const mock = await api.createInterview({
-        role, jd: "", count: 8, mode, experienceLevel: level, checkpoint: true,
+        role, jd: "", count: 8, experienceLevel: level, checkpoint: true,
         track, stack: stack || undefined,
       });
       router.push(`/mock/${mock.id}`);
@@ -111,18 +110,6 @@ export default function CheckpointPage() {
                 )}
               </>
             )}
-
-            <div className="field" style={{ marginBottom: 0 }}>
-              <span>How will you answer?</span>
-              <div className="mode-toggle">
-                <button type="button" className={`mode-opt${mode === "TEXT" ? " active" : ""}`} onClick={() => setMode("TEXT")}>
-                  ⌨️ Text<em>Type your answers</em>
-                </button>
-                <button type="button" className={`mode-opt${mode === "VOICE" ? " active" : ""}`} onClick={() => setMode("VOICE")}>
-                  🎤 Voice<em>Speak, like a real interview</em>
-                </button>
-              </div>
-            </div>
 
             {error && <p className="auth-error" style={{ marginTop: 14 }}>{error}</p>}
             <div className="wiz-actions">

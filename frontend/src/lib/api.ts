@@ -1,17 +1,24 @@
 // Tiny API client for the Acely backend.
-const API_BASE =
+import { isDemoPath } from "@/lib/demo";
+
+export const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 const TOKEN_KEY = "preppal_token";
+/** Placeholder "session" inside /demo — the visitor's real token (if any) is never read or touched. */
+const DEMO_TOKEN = "demo";
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
+  if (isDemoPath()) return DEMO_TOKEN;
   return window.localStorage.getItem(TOKEN_KEY);
 }
 export function setToken(token: string) {
+  if (isDemoPath()) return;
   window.localStorage.setItem(TOKEN_KEY, token);
 }
 export function clearToken() {
+  if (isDemoPath()) return; // leaving the demo must never sign a real user out
   window.localStorage.removeItem(TOKEN_KEY);
 }
 
@@ -158,7 +165,7 @@ export interface Dashboard {
   scoreTrend: number[];
   skills: { communication: number; technical: number; clarity: number; relevance: number };
   confidenceJourney: { index: number; nervousness: number }[];
-  recent: { id: string; role: string; status: string; score: number | null; createdAt: string; interviewType: InterviewType | null }[];
+  recent: { id: string; role: string; status: string; score: number | null; createdAt: string; interviewType: InterviewType | null; kind?: "CHECKPOINT" | "INTERVIEW" | "PRACTICE" }[];
   byType: TypeSummary[];
   plan: {
     hasCheckpoint: boolean;
@@ -205,12 +212,95 @@ export interface ReportSummary {
   createdAt: string;
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+// ── Cold-start handling ──────────────────────────────────────────────────────────────────────
+// The backend runs on Render's free tier, which puts the server to sleep after ~15 min without
+// traffic. The first request after that is held open while it boots (1–2 min). Without help the
+// UI just shows a spinner forever, so we (a) tell the user what's happening once a request is
+// slow and the server hasn't answered recently, and (b) give up after a hard limit with a clear
+// message instead of hanging.
+
+/** A request still waiting after this long, while the server hasn't answered recently, means it's probably waking up. */
+const SLOW_MS = 4_000;
+/** If the server answered within this window it's awake — a slow request is just slow (e.g. AI), not a cold start. */
+const AWAKE_WINDOW_MS = 10 * 60_000;
+/** Hard limit for normal requests. Longer than a typical cold start so we don't give up just before it's ready. */
+const TIMEOUT_MS = 120_000;
+/** AI endpoints (generation/scoring) can be slow even on a warm server, so they get more room. */
+const AI_TIMEOUT_MS = 180_000;
+const LAST_OK_KEY = "acely_server_ok_at";
+
+const TIMEOUT_MESSAGE =
+  "The server is taking longer than usual to respond. It may still be starting up — please wait a moment and try again.";
+const UNREACHABLE_MESSAGE =
+  "We couldn't connect to the server. Please check your internet connection and try again.";
+const STARTING_MESSAGE =
+  "The server is starting up. Please wait a few seconds and try again.";
+
+function lastOkAt(): number {
+  try {
+    return Number(window.sessionStorage.getItem(LAST_OK_KEY)) || 0;
+  } catch {
+    return 0;
+  }
+}
+function markServerAwake() {
+  try {
+    window.sessionStorage.setItem(LAST_OK_KEY, String(Date.now()));
+  } catch {
+    /* storage unavailable — the notice may just show a little more eagerly */
+  }
+}
+
+// Tiny store for the "server is waking up" notice (read by <ServerWakeNotice />).
+let wakingCount = 0;
+let wakingSince: number | null = null;
+const wakeListeners = new Set<() => void>();
+function setWaking(delta: number) {
+  wakingCount = Math.max(0, wakingCount + delta);
+  wakingSince = wakingCount > 0 ? (wakingSince ?? Date.now()) : null;
+  wakeListeners.forEach((l) => l());
+}
+/** Epoch ms when the server started looking like it's waking up, or null when it isn't. */
+export function getWakingSince(): number | null {
+  return wakingSince;
+}
+export function subscribeWaking(listener: () => void): () => void {
+  wakeListeners.add(listener);
+  return () => wakeListeners.delete(listener);
+}
+
+async function request<T>(
+  path: string,
+  options: RequestInit = {},
+  timeoutMs: number = TIMEOUT_MS,
+): Promise<T> {
+  // Demo: answered from static fixtures — no network, no wake-up wait. Lazy so normal users never load them.
+  if (isDemoPath()) {
+    const { demoRequest } = await import("@/lib/demo/api");
+    return demoRequest<T>(path, options);
+  }
+
   const token = getToken();
+  const controller = new AbortController();
+  let timedOut = false;
+  const timeout = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+
+  let countedAsWaking = false;
+  const slowTimer = setTimeout(() => {
+    if (Date.now() - lastOkAt() > AWAKE_WINDOW_MS) {
+      countedAsWaking = true;
+      setWaking(+1);
+    }
+  }, SLOW_MS);
+
   let res: Response;
   try {
     res = await fetch(`${API_BASE}${path}`, {
       ...options,
+      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -218,14 +308,27 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       },
     });
   } catch {
-    // fetch() throws a bare "Failed to fetch" on any network-level failure (server unreachable,
-    // timeout, cold-start). Give the user something actionable instead of the raw browser message.
-    const netErr = new Error("Couldn't reach the server — it may be waking up. Please try again in a few seconds.") as Error & { status?: number };
+    // fetch() throws a bare "Failed to fetch" / AbortError on network failures and on our own
+    // timeout. Give the user something they can act on instead of the raw browser message.
+    const netErr = new Error(timedOut ? TIMEOUT_MESSAGE : UNREACHABLE_MESSAGE) as Error & { status?: number };
     netErr.status = 0;
     throw netErr;
+  } finally {
+    clearTimeout(timeout);
+    clearTimeout(slowTimer);
+    if (countedAsWaking) setWaking(-1);
   }
 
+  // 502/503/504 come from Render's proxy while the app is (re)starting — the app itself didn't answer.
+  const gatewayError = res.status === 502 || res.status === 503 || res.status === 504;
+  if (!gatewayError) markServerAwake();
+
   if (!res.ok) {
+    if (gatewayError) {
+      const err = new Error(STARTING_MESSAGE) as Error & { status?: number };
+      err.status = res.status;
+      throw err;
+    }
     let message = "Something went wrong. Please try again.";
     try {
       const body = await res.json();
@@ -317,7 +420,7 @@ export const api = {
     request<InterviewDto>("/api/interviews", {
       method: "POST",
       body: JSON.stringify(opts),
-    }),
+    }, AI_TIMEOUT_MS),
 
   getInterview: (id: string) => request<InterviewDto>(`/api/interviews/${id}`),
 
@@ -336,7 +439,7 @@ export const api = {
     request<AnswerFeedback>(`/api/interviews/${sessionId}/answer`, {
       method: "POST",
       body: JSON.stringify({ questionId, transcript, ...delivery }),
-    }),
+    }, AI_TIMEOUT_MS),
 
   retry: (
     sessionId: string,
@@ -347,13 +450,13 @@ export const api = {
     request<AnswerFeedback>(`/api/interviews/${sessionId}/retry`, {
       method: "POST",
       body: JSON.stringify({ questionId, transcript, ...delivery }),
-    }),
+    }, AI_TIMEOUT_MS),
 
   scoreNext: (sessionId: string) =>
-    request<ScoreProgress>(`/api/interviews/${sessionId}/score-next`, { method: "POST" }),
+    request<ScoreProgress>(`/api/interviews/${sessionId}/score-next`, { method: "POST" }, AI_TIMEOUT_MS),
 
   complete: (sessionId: string) =>
-    request<InterviewDto>(`/api/interviews/${sessionId}/complete`, { method: "POST" }),
+    request<InterviewDto>(`/api/interviews/${sessionId}/complete`, { method: "POST" }, AI_TIMEOUT_MS),
 
   // Discard an unfinished session (kept out of trends, not deleted).
   abandon: (sessionId: string) =>
@@ -372,6 +475,7 @@ export const api = {
   adminUsers: () => request<AdminUser[]>("/api/admin/users"),
   adminPrune: () => request<{ deleted: number }>("/api/admin/prune-ai-usage", { method: "POST" }),
   adminFeedback: () => request<AdminFeedback>("/api/admin/feedback"),
+  adminDemo: () => request<AdminDemoStats>("/api/admin/demo"),
 };
 
 export interface AdminUser {
@@ -424,4 +528,35 @@ export interface AdminInsights {
   topRoles: AdminSlice[];
   aiUsageRows: number;
   aiUsageOldestDays: number | null;
+}
+
+// ── Demo visit analytics (admin) ──
+export interface AdminDemoWindow {
+  visits: number;
+  uniqueVisitors: number;
+  completedTour: number;
+  openedBts: number;
+  hitSignupPrompt: number;
+  clickedSignup: number;
+}
+export interface AdminDemoVisit {
+  at: string;
+  source: string | null;
+  mobile: boolean;
+  maxStep: number;
+  completed: boolean;
+  openedBts: boolean;
+  hitGate: boolean;
+  clickedSignup: boolean;
+}
+export interface AdminDemoStats {
+  last7d: AdminDemoWindow;
+  last30d: AdminDemoWindow;
+  allTime: AdminDemoWindow;
+  tourSteps: number;
+  funnel: number[];
+  sources: { label: string; count: number }[];
+  daily: { date: string; count: number }[];
+  mobilePct: number;
+  recent: AdminDemoVisit[];
 }

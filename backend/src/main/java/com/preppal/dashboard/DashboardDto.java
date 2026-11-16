@@ -41,8 +41,10 @@ public record DashboardDto(
     public record NervePoint(int index, int nervousness) {
     }
 
+    /** kind: "CHECKPOINT" (Readiness Check), "INTERVIEW" (Mock Interview) or "PRACTICE" — mixed sessions
+     *  have no interviewType, so without this the dashboard couldn't say what they were. */
     public record RecentMock(UUID id, String role, String status, Integer score, Instant createdAt,
-                             String interviewType) {
+                             String interviewType, String kind) {
     }
 
     /**

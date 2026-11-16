@@ -78,7 +78,9 @@ public class DashboardService {
         List<DashboardDto.RecentMock> recent = newestFirst.stream().limit(8)
                 .map(s -> new DashboardDto.RecentMock(s.getId(), s.getRole(), s.getStatus().name(),
                         s.getOverallScore(), s.getCreatedAt(),
-                        s.getInterviewType() == null ? null : s.getInterviewType().name()))
+                        s.getInterviewType() == null ? null : s.getInterviewType().name(),
+                        s.isCheckpoint() ? "CHECKPOINT"
+                                : s.getScoringMode() == com.preppal.interview.ScoringMode.INTERVIEW ? "INTERVIEW" : "PRACTICE"))
                 .toList();
 
         var r = readinessService.forUser(user.getId()); // ONE readiness definition (measurements-only)

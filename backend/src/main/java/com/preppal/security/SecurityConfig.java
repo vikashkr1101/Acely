@@ -38,7 +38,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/signup", "/api/auth/login",
                                 "/api/auth/verify-email", "/api/auth/resend-code",
-                                "/api/auth/forgot-password", "/api/auth/reset-password", "/api/health").permitAll()
+                                "/api/auth/forgot-password", "/api/auth/reset-password", "/api/health",
+                                "/api/demo/track").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

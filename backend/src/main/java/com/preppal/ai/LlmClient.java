@@ -248,6 +248,11 @@ public abstract class LlmClient {
                 figures, record counts, or production experience. Show the SHAPE of a strong answer
                 (structure, what to cover, the kind of detail to add) so they can fill it with their own
                 real experience.
+                Write it as natural, speakable first-person prose that reads like a real answer. NEVER use
+                bracketed placeholders or template slots such as [Project Name], [Technology] or [Metric].
+                Where a detail is needed, reuse a real detail the candidate actually mentioned in their
+                answer; if they gave none, use a plain generic phrase instead ("one of my projects",
+                "the framework I was using", "a noticeable speed-up").
 
                 Respond with ONLY valid JSON in exactly this shape:
                 {"dimensions":[{"key":"<dimension key>","score":0-100,"evidence":"<short quote or empty>"}],

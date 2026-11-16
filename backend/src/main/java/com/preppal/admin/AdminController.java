@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 public class AdminController {
 
     private final AdminService admin;
+    private final com.preppal.demo.DemoService demoService;
 
     @Value("${preppal.admin.emails:}")
     private String adminEmailsCsv;
@@ -50,6 +51,12 @@ public class AdminController {
     public AdminFeedbackDto feedback(@AuthenticationPrincipal User user) {
         requireAdmin(user);
         return admin.feedback();
+    }
+
+    @GetMapping("/demo")
+    public com.preppal.demo.DemoStatsDto demo(@AuthenticationPrincipal User user) {
+        requireAdmin(user);
+        return demoService.stats();
     }
 
     @PostMapping("/prune-ai-usage")

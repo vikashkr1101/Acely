@@ -7,6 +7,7 @@ import { FiGrid, FiMic, FiClipboard, FiCompass, FiBarChart2, FiBookOpen, FiMessa
 import { api, clearToken, getToken, type User } from "@/lib/api";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { BrandLockup } from "@/components/brand/BrandLockup";
+import { demoHref, isDemoPath } from "@/lib/demo";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", short: "Dashboard", Icon: FiGrid, match: (p: string) => p === "/dashboard" },
@@ -22,8 +23,12 @@ const PRIMARY = NAV.slice(0, 5);
 const SECONDARY = NAV.slice(5);
 
 export function AppShell({ children, bleed = false }: { children: ReactNode; bleed?: boolean }) {
-  const pathname = usePathname();
+  const rawPath = usePathname();
   const router = useRouter();
+  // Demo: the same shell under /demo/* — links point at their /demo twins, active-state ignores the prefix.
+  const demo = isDemoPath(rawPath);
+  const pathname = demo ? rawPath.replace(/^\/demo/, "") || "/dashboard" : rawPath;
+  const h = (href: string) => (demo ? demoHref(href) : href);
   const [user, setUser] = useState<User | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -59,6 +64,7 @@ export function AppShell({ children, bleed = false }: { children: ReactNode; ble
   }, [menuOpen]);
 
   function logout() {
+    if (demo) { router.push("/"); return; } // "Exit demo" — never touches a real session
     clearToken();
     router.replace("/login");
   }
@@ -67,13 +73,13 @@ export function AppShell({ children, bleed = false }: { children: ReactNode; ble
     <div className="app-shell">
       {/* ── Desktop sidebar ── */}
       <aside className="sidebar">
-        <Link href="/dashboard" className="side-brand" aria-label="Acely — Dashboard">
+        <Link href={h("/dashboard")} className="side-brand" aria-label="Acely — Dashboard">
           <BrandLockup />
         </Link>
 
         <nav className="side-nav">
           {NAV.map(({ href, label, Icon, match }) => (
-            <Link key={href} href={href} className={`side-link${match(pathname) ? " active" : ""}`}>
+            <Link key={href} href={h(href)} className={`side-link${match(pathname) ? " active" : ""}`}>
               <Icon className="ic" /> <span className="side-word">{label}</span>
             </Link>
           ))}
@@ -109,7 +115,7 @@ export function AppShell({ children, bleed = false }: { children: ReactNode; ble
               </Link>
               <div className="side-msep" />
               <button className="side-mi danger" role="menuitem" onClick={logout}>
-                <span className="mic"><FiLogOut /></span> Sign out
+                <span className="mic"><FiLogOut /></span> {demo ? "Exit demo" : "Sign out"}
               </button>
             </div>
           )}
@@ -118,7 +124,7 @@ export function AppShell({ children, bleed = false }: { children: ReactNode; ble
 
       {/* ── Mobile top bar: logo + name ── */}
       <header className="mtop">
-        <Link href="/dashboard" className="mtop-logo">
+        <Link href={h("/dashboard")} className="mtop-logo">
           <span className="mk">A</span>
           <span>Ace<span className="grad-text">ly</span></span>
         </Link>
@@ -132,7 +138,7 @@ export function AppShell({ children, bleed = false }: { children: ReactNode; ble
       {/* ── Mobile bottom bar: 5 tabs + ⋮ More ── */}
       <nav className="mtabs">
         {PRIMARY.map(({ href, label, short, Icon, match }) => (
-          <Link key={href} href={href} className={`mtab${match(pathname) ? " on" : ""}`} onClick={() => setMenuOpen(false)}>
+          <Link key={href} href={h(href)} className={`mtab${match(pathname) ? " on" : ""}`} onClick={() => setMenuOpen(false)}>
             <Icon className="mti" /> <span>{short ?? label}</span>
           </Link>
         ))}
@@ -149,7 +155,7 @@ export function AppShell({ children, bleed = false }: { children: ReactNode; ble
         {menuOpen && (
           <div className="mtab-menu" role="menu" data-acct-menu>
             {SECONDARY.map(({ href, label, Icon }) => (
-              <Link key={href} href={href} className="side-mi" role="menuitem" onClick={() => setMenuOpen(false)}>
+              <Link key={href} href={h(href)} className="side-mi" role="menuitem" onClick={() => setMenuOpen(false)}>
                 <span className="mic"><Icon /></span> {label}
               </Link>
             ))}
@@ -159,7 +165,7 @@ export function AppShell({ children, bleed = false }: { children: ReactNode; ble
               <span className="mic"><FiUser /></span> Profile
             </Link>
             <button className="side-mi danger" role="menuitem" onClick={logout}>
-              <span className="mic"><FiLogOut /></span> Sign out
+              <span className="mic"><FiLogOut /></span> {demo ? "Exit demo" : "Sign out"}
             </button>
           </div>
         )}

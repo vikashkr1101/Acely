@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FiPlayCircle } from "react-icons/fi";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export default function Home() {
@@ -19,9 +20,14 @@ export default function Home() {
             <Link href="/login" className="nav-login">Log in</Link>
             <ThemeToggle className="nav-theme" />
           </nav>
-          <Link href="/signup" className="btn sm">
-            Sign up free
-          </Link>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Link href="/demo" className="btn o sm" aria-label="Demo: explore Acely without signing up">
+              <FiPlayCircle aria-hidden="true" /> Demo
+            </Link>
+            <Link href="/signup" className="btn sm">
+              Sign up free
+            </Link>
+          </div>
         </div>
       </header>
 

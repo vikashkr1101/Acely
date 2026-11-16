@@ -4,8 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, type Report, type InterviewType, type ExperienceLevel } from "@/lib/api";
-import { scoreBand as band, BAND_HEX } from "@/lib/score";
+import { scoreBand as band, BAND_HEX, verdictLabel } from "@/lib/score";
 import { TYPE_LABEL } from "@/lib/interview";
+import { isDemoBlocked } from "@/lib/demo";
 
 const LEVEL_LABEL: Record<ExperienceLevel, string> = {
   FRESHER: "Fresher", ZERO_ONE: "0–1 yrs", ONE_TWO: "1–2 yrs",
@@ -24,13 +25,6 @@ function faceFor(v: number) {
 function fmtDate(iso: string) {
   const d = new Date(iso);
   return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
-}
-function verdictLabel(v: number | null) {
-  if (v == null || v === 0) return "Just started";
-  if (v >= 85) return "Interview-ready";
-  if (v >= 70) return "Almost ready";
-  if (v >= 50) return "Getting there";
-  return "Early days";
 }
 function standingHeadline(v: number | null) {
   if (v == null || v === 0) return "You've made a start — that's the hardest step.";
@@ -61,7 +55,7 @@ export function ReportView({ report, userName = "" }: { report: Report; userName
   const [starting, setStarting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
-  // "Retry this mock" = same role/type/level/difficulty/mode, fresh questions (skips setup).
+  // "Retry this mock" = same role/type/level/difficulty, fresh questions (skips setup).
   async function handleRetryMock() {
     setRetrying(true);
     try {
@@ -70,7 +64,6 @@ export function ReportView({ report, userName = "" }: { report: Report; userName
         role: report.role,
         jd: "",
         count: Math.min(6, Math.max(1, seed)),
-        mode: report.mode === "VOICE" ? "VOICE" : "TEXT",
         interviewType: report.interviewType ?? undefined,
         experienceLevel: report.experienceLevel ?? undefined,
         difficulty: report.difficulty ?? undefined,
@@ -79,8 +72,9 @@ export function ReportView({ report, userName = "" }: { report: Report; userName
       });
       router.push(`/mock/${mock.id}`);
     } catch (e) {
-      setToast(e instanceof Error ? e.message : "Couldn't start — please try again.");
       setRetrying(false);
+      if (isDemoBlocked(e)) return; // demo: the sign-up prompt is already showing
+      setToast(e instanceof Error ? e.message : "Couldn't start — please try again.");
       setTimeout(() => setToast(null), 3200);
     }
   }
@@ -98,7 +92,6 @@ export function ReportView({ report, userName = "" }: { report: Report; userName
         role: report.role,
         jd: "",
         count: 6,
-        mode: report.mode === "VOICE" ? "VOICE" : "TEXT",
         interviewType: rec.ctaType,
         experienceLevel: report.experienceLevel ?? undefined,
         difficulty: report.difficulty ?? undefined,
@@ -106,8 +99,9 @@ export function ReportView({ report, userName = "" }: { report: Report; userName
       });
       router.push(`/mock/${mock.id}`);
     } catch (e) {
-      setToast(e instanceof Error ? e.message : "Couldn't start — please try again.");
       setStarting(false);
+      if (isDemoBlocked(e)) return; // demo: the sign-up prompt is already showing
+      setToast(e instanceof Error ? e.message : "Couldn't start — please try again.");
       setTimeout(() => setToast(null), 3200);
     }
   }
@@ -342,7 +336,7 @@ export function ReportView({ report, userName = "" }: { report: Report; userName
             const delta = first?.score != null && last?.score != null ? last.score - first.score : null;
             const hasBreakdown = !!qq.answer || dims.length > 0 || retried || !!qq.modelAnswer;
             return (
-              <div className="rpv-q" key={qq.id}>
+              <div className="rpv-q" key={qq.id} data-qid={qq.id}>
                 <div className="q-head">
                   <span className="q-no">Q{qq.ordinal}</span>
                   <div className="q-main">
@@ -371,7 +365,7 @@ export function ReportView({ report, userName = "" }: { report: Report; userName
                       {qq.answer && <div className="q-answer">“{qq.answer}”</div>}
 
                       {dims.length > 0 && (
-                        <div className="q-dims">
+                        <div className="q-dims" data-tour="evidence">
                           {dims.map((d) => (
                             <div className="q-dim" key={d.key}>
                               <div className="dh">
@@ -388,7 +382,7 @@ export function ReportView({ report, userName = "" }: { report: Report; userName
                       )}
 
                       {retried && first && last && (
-                        <div className="q-cmp">
+                        <div className="q-cmp" data-tour="retry">
                           <div className="att first">
                             <div className="al"><span>First try</span><span className="as">{first.score ?? "—"}</span></div>
                             <p>{first.transcript}</p>
@@ -402,8 +396,20 @@ export function ReportView({ report, userName = "" }: { report: Report; userName
 
                       {qq.modelAnswer && (
                         <details className="q-model">
-                          <summary>See a strong example answer</summary>
-                          <p>{qq.modelAnswer}</p>
+                          {/* Older evaluations sometimes returned a fill-in template ("[Project Name]") rather
+                              than a written example; say so honestly instead of calling it an example. */}
+                          {/\[[^\]]{2,60}\]/.test(qq.modelAnswer) ? (
+                            <>
+                              <summary>See a strong answer template</summary>
+                              <p style={{ fontStyle: "normal", fontWeight: 600, marginBottom: 6 }}>Fill the [brackets] with your own real experience.</p>
+                              <p>{qq.modelAnswer}</p>
+                            </>
+                          ) : (
+                            <>
+                              <summary>See a strong example answer</summary>
+                              <p>{qq.modelAnswer}</p>
+                            </>
+                          )}
                         </details>
                       )}
                     </div>

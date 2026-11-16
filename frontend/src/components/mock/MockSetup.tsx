@@ -82,7 +82,6 @@ export function MockSetup({ scoringMode }: { scoringMode: "PRACTICE" | "INTERVIE
   const [level, setLevel] = useState<ExperienceLevel>("FRESHER");
   const [jd, setJd] = useState("");
   const [count, setCount] = useState(scoringMode === "INTERVIEW" ? 6 : 4);
-  const [mode, setMode] = useState<"TEXT" | "VOICE">("TEXT");
   const [difficulty, setDifficulty] = useState<Difficulty>("NORMAL");
   const [autoHard, setAutoHard] = useState(false);
   const [company, setCompany] = useState<CompanyType>("GENERAL");
@@ -138,7 +137,7 @@ export function MockSetup({ scoringMode }: { scoringMode: "PRACTICE" | "INTERVIE
         role,
         jd: effTailor === "jd" ? jd : "",
         stack: effTailor === "stack" && stack.trim() ? stack.trim() : undefined,
-        count, mode, interviewType: type, experienceLevel: level, difficulty, scoringMode, companyType: company,
+        count, interviewType: type, experienceLevel: level, difficulty, scoringMode, companyType: company,
       });
       router.push(`/mock/${mock.id}`);
     } catch (err) {
@@ -315,18 +314,6 @@ export function MockSetup({ scoringMode }: { scoringMode: "PRACTICE" | "INTERVIE
                   {COMPANIES.map((co) => (
                     <button type="button" key={co.key} className={`level-pill${company === co.key ? " active" : ""}`} onClick={() => setCompany(co.key)}>{co.label}</button>
                   ))}
-                </div>
-              </div>
-
-              <div className="field" style={{ marginBottom: 0 }}>
-                <span>How will you answer?</span>
-                <div className="mode-toggle">
-                  <button type="button" className={`mode-opt${mode === "TEXT" ? " active" : ""}`} onClick={() => setMode("TEXT")}>
-                    ⌨️ Text<em>Type your answers</em>
-                  </button>
-                  <button type="button" className={`mode-opt${mode === "VOICE" ? " active" : ""}`} onClick={() => setMode("VOICE")}>
-                    🎤 Voice<em>Speak, like a real interview</em>
-                  </button>
                 </div>
               </div>
 

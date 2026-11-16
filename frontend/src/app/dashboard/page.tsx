@@ -7,7 +7,8 @@ import { FiArrowRight, FiPlus } from "react-icons/fi";
 import { AppShell } from "@/components/layout/AppShell";
 import { Loader } from "@/components/ui/Loader";
 import { api, getToken, type Dashboard, type Usage, type User, type InterviewType } from "@/lib/api";
-import { scoreBand, scoreColor } from "@/lib/score";
+import { scoreBand, scoreColor, verdictLabel } from "@/lib/score";
+import { isDemoPath } from "@/lib/demo";
 import { TYPE_LABEL, TYPE_COLOR, STATUS_COLOR, STATUS_LABEL } from "@/lib/interview";
 import { LoadError } from "@/components/ui/LoadError";
 /** Coarse role → domain (lite domain-awareness — keeps guidance relevant, never sends IT toward sales). */
@@ -32,7 +33,10 @@ function sinceLabel(iso: string | null): string {
 
 
 function initials(role: string): string {
-  const words = role.trim().split(/\s+/).filter(Boolean);
+  // Strip surrounding punctuation so "Backend Developer (Java)" → "BJ", not "B(".
+  const words = role.trim().split(/\s+/)
+    .map((w) => w.replace(/^[()[\]{}"'.,:;!?/\\&+-]+|[()[\]{}"'.,:;!?/\\&+-]+$/g, ""))
+    .filter(Boolean);
   if (words.length === 0) return "?";
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
   return (words[0][0] + words[words.length - 1][0]).toUpperCase();
@@ -40,10 +44,12 @@ function initials(role: string): string {
 
 function readinessCopy(readiness: number, mocksDone: number): { head: string; line: string } {
   if (mocksDone === 0) return { head: "Let's begin", line: "Your first mock sets the baseline — a few reps and the nerves start to fade." };
-  if (readiness >= 80) return { head: "Interview-ready 🎯", line: "You're sharp. Keep the edge with a mock every couple of days." };
-  if (readiness >= 65) return { head: "Almost ready", line: "A couple more focused mocks and you'll cross 80." };
-  if (readiness >= 45) return { head: "Getting there", line: "Solid base. Target your weakest skill below to climb faster." };
-  return { head: "Building up", line: "Every mock counts — keep going and watch the trend rise." };
+  // Labels come from the shared verdict (lib/score) so the dashboard and report never disagree.
+  const head = verdictLabel(readiness);
+  if (readiness >= 85) return { head: `${head} 🎯`, line: "You're sharp. Keep the edge with a mock every couple of days." };
+  if (readiness >= 70) return { head, line: "A couple more focused mocks and you'll cross 85." };
+  if (readiness >= 50) return { head, line: "Solid base. Target your weakest skill below to climb faster." };
+  return { head, line: "Every mock counts — keep going and watch the trend rise." };
 }
 
 /** area + line sparkline path for a series */
@@ -116,7 +122,8 @@ export default function DashboardPage() {
     : !active && data?.readinessEstimatedPending
       ? { head: "Couldn't measure reliably", line: "Your last measurement was scored offline while our AI was briefly down — re-take a Readiness Check for an accurate number." }
       : { head: "Not measured yet", line: "Take a Readiness Check for an honest read of where you stand — practice builds it, checks measure it." };
-  const firstName = user?.name?.split(/\s+/)[0] ?? "there";
+  // Demo persona ("Demo Admin") reads oddly as a first name ("Hey, Demo") — greet it in full.
+  const firstName = (isDemoPath() ? user?.name : user?.name?.split(/\s+/)[0]) ?? "there";
   const typeName = active ? TYPE_LABEL[active.type] : null;
   const activeWeakScore = active?.dimensions.find((d) => d.label === active.weakest)?.score ?? null;
 
@@ -249,7 +256,7 @@ export default function DashboardPage() {
 
         {/* readiness + trend */}
         <div className="db-row2">
-          <div className="db-card">
+          <div className="db-card" data-tour="readiness">
             <p className="k">
               {typeName ? `${typeName} readiness` : "Interview readiness"}
               {!active && data?.track && (
@@ -276,7 +283,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="db-card db-trend">
+          <div className="db-card db-trend" data-tour="trend">
             <p className="k">{typeName ? `${typeName} score trend` : "Score trend"}</p>
             {trend.length >= 2 ? (
               <>
@@ -392,7 +399,9 @@ export default function DashboardPage() {
                   <span className="db-mk">{initials(m.role)}</span>
                   <span className="main">
                     <span className="role">{m.role}</span>
-                    <span className="meta"><span style={{ color: STATUS_COLOR[m.status]?.fg, fontWeight: 700 }}>{STATUS_LABEL[m.status] ?? m.status}</span>{!active && m.interviewType ? <> · <span style={{ color: TYPE_COLOR[m.interviewType], fontWeight: 700 }}>{TYPE_LABEL[m.interviewType]}</span></> : ""}</span>
+                    <span className="meta"><span style={{ color: STATUS_COLOR[m.status]?.fg, fontWeight: 700 }}>{STATUS_LABEL[m.status] ?? m.status}</span>{!active && m.interviewType ? <> · <span style={{ color: TYPE_COLOR[m.interviewType], fontWeight: 700 }}>{TYPE_LABEL[m.interviewType]}</span></>
+                      : !active && m.kind === "CHECKPOINT" ? <> · <span style={{ color: "var(--brand)", fontWeight: 700 }}>🧭 Readiness Check</span></>
+                      : !active && m.kind === "INTERVIEW" ? <> · <span style={{ color: "var(--brandink)", fontWeight: 700 }}>Mock Interview</span></> : ""}</span>
                   </span>
                   {done ? (
                     <span className="db-mscore" style={{ color: scoreColor(m.score) }}>{m.score ?? "—"}</span>
